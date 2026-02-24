@@ -101,8 +101,8 @@ app.post("/api/run", async (req, res) => {
             .filter((v) => Number.isFinite(v) && v >= 8 && v <= 18)
         )).sort((a, b) => a - b)
       : [];
-    if (normalizedPickupTimes.length !== 2) {
-      return res.status(400).json({ ok: false, error: "pickupTimes must contain 2 values (08..18)" });
+    if (normalizedPickupTimes.length < 1) {
+      return res.status(400).json({ ok: false, error: "pickupTimes must contain at least 1 value (08..18)" });
     }
     req.normalizedPickupTimes = normalizedPickupTimes;
   }
