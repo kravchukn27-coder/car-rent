@@ -363,11 +363,19 @@
       padding: 0.85rem;
       margin-top: 0.25rem;
     }
+    .flex-calendar-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      padding: 0.65rem;
+      max-width: 525px;
+      margin: 0 auto;
+    }
     .flex-calendar-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.45rem;
     }
     .flex-calendar-title {
       font-size: 0.95rem;
@@ -387,13 +395,13 @@
       display: flex;
       flex-wrap: wrap;
       gap: 0.4rem;
-      margin-bottom: 0.55rem;
+      margin-bottom: 0.5rem;
     }
     .flex-time-row {
       display: flex;
       gap: 0.55rem;
       flex-wrap: wrap;
-      margin-bottom: 0.55rem;
+      margin-bottom: 0.5rem;
     }
     .flex-time-row .field {
       min-width: 140px;
@@ -519,11 +527,11 @@
     .flex-calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 0.28rem;
+      gap: 0.25rem;
     }
     .flex-calendar-weekdays div {
       text-align: center;
-      font-size: 0.74rem;
+      font-size: 0.78rem;
       color: var(--textMuted);
       padding: 0.12rem 0;
     }
@@ -532,10 +540,10 @@
       background: #ffffff;
       color: var(--text);
       border-radius: 999px;
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       cursor: pointer;
-      font-size: 0.84rem;
+      font-size: 0.92rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -554,14 +562,23 @@
       cursor: not-allowed;
     }
     .flex-day.in-range {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #066c4f;
+      font-weight: 600;
     }
     .flex-day.start {
       background: rgba(0, 108, 228, 0.2);
       border-color: rgba(0, 108, 228, 0.65);
       color: #003b95;
       font-weight: 700;
+    }
+    .flex-day.end {
+      background: rgba(0, 108, 228, 0.2);
+      border-color: rgba(0, 108, 228, 0.65);
+      color: #003b95;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 2px rgba(0, 59, 149, 0.42);
     }
     .flex-selected {
       margin-top: 0.7rem;
@@ -652,8 +669,8 @@
           <input type="date" id="endDate" />
         </div>
         <div class="actions">
-          <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
           <button type="button" class="btn btn-secondary" id="loadBtn">Загрузить последние результаты</button>
+          <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
           <span class="status" id="status"></span>
         </div>
       </div>
@@ -689,30 +706,32 @@
           </div>
         </div>
         <div id="flexCalendarBlock" class="flex-calendar-block">
-          <div class="flex-calendar-head">
-            <button type="button" class="flex-cal-nav" id="flexPrevMonthBtn">◀</button>
-            <div class="flex-calendar-title" id="flexMonthTitle"></div>
-            <button type="button" class="flex-cal-nav" id="flexNextMonthBtn">▶</button>
-          </div>
-          <div class="flex-presets">
-            <button type="button" class="flex-preset-btn" id="presetWeekendsBtn">Выходные месяца</button>
-            <button type="button" class="flex-preset-btn" id="presetFridaysBtn">Каждую пятницу</button>
-            <button type="button" class="flex-preset-btn" id="presetClearBtn">Сбросить</button>
-          </div>
-          <div class="flex-time-row">
-            <div class="field">
-              <label for="flexTime1">Время окна 1</label>
-              <select id="flexTime1"></select>
+          <div class="flex-calendar-card">
+            <div class="flex-calendar-head">
+              <button type="button" class="flex-cal-nav" id="flexPrevMonthBtn">◀</button>
+              <div class="flex-calendar-title" id="flexMonthTitle"></div>
+              <button type="button" class="flex-cal-nav" id="flexNextMonthBtn">▶</button>
             </div>
-            <div class="field">
-              <label for="flexTime2">Время окна 2</label>
-              <select id="flexTime2"></select>
+            <div class="flex-presets">
+              <button type="button" class="flex-preset-btn" id="presetWeekendsBtn">Выходные месяца</button>
+              <button type="button" class="flex-preset-btn" id="presetFridaysBtn">Каждую пятницу</button>
+              <button type="button" class="flex-preset-btn" id="presetClearBtn">Сбросить</button>
             </div>
+            <div class="flex-time-row">
+              <div class="field">
+                <label for="flexTime1">Время окна 1</label>
+                <select id="flexTime1"></select>
+              </div>
+              <div class="field">
+                <label for="flexTime2">Время окна 2</label>
+                <select id="flexTime2"></select>
+              </div>
+            </div>
+            <div class="flex-calendar-weekdays">
+              <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+            </div>
+            <div id="flexCalendarGrid" class="flex-calendar-grid"></div>
           </div>
-          <div class="flex-calendar-weekdays">
-            <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-          </div>
-          <div id="flexCalendarGrid" class="flex-calendar-grid"></div>
           <div id="flexSelectedWindows" class="flex-selected"></div>
         </div>
       </div>
@@ -731,11 +750,7 @@
       <div class="window-tabs" id="windowTabs"></div>
       <div class="sort-row">
         <label for="timeFilter">Время выдачи:</label>
-        <select id="timeFilter">
-          <option value="">Все</option>
-          <option value="10">10:00</option>
-          <option value="16">16:00</option>
-        </select>
+        <select id="timeFilter"><option value="">Все</option></select>
         <label for="sort">Сортировка:</label>
         <select id="sort">
           <option value="price">По цене (сначала дешевле)</option>
@@ -1006,19 +1021,22 @@
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayIso = toLocalDateString(today);
+      const rentDays = getEffectiveFlexRentDays();
+      const endDatesSet = new Set(flexSelectedStarts.map((startIso) => addDays(startIso, rentDays)));
       const cells = [];
       for (let i = 0; i < offset; i++) cells.push({ empty: true });
       for (let day = 1; day <= daysInMonth; day++) {
         const iso = toLocalDateString(new Date(year, month, day));
         const isStart = flexSelectedStarts.includes(iso);
+        const isEnd = endDatesSet.has(iso);
         const inRange = isDateInFlexRanges(iso);
         const isPast = iso < todayIso;
-        cells.push({ iso, day, isStart, inRange, isPast });
+        cells.push({ iso, day, isStart, isEnd, inRange, isPast });
       }
       while (cells.length % 7 !== 0) cells.push({ empty: true });
       flexCalendarGrid.innerHTML = cells.map((c) => {
         if (c.empty) return `<button type="button" class="flex-day muted" disabled></button>`;
-        return `<button type="button" class="flex-day${c.isPast ? " past" : ""}${c.isStart ? " start" : ""}${!c.isStart && c.inRange ? " in-range" : ""}" data-date="${escapeHtml(c.iso)}"${c.isPast ? " disabled" : ""}>${c.day}</button>`;
+        return `<button type="button" class="flex-day${c.isPast ? " past" : ""}${c.isStart ? " start" : ""}${c.isEnd ? " end" : ""}${!c.isStart && !c.isEnd && c.inRange ? " in-range" : ""}" data-date="${escapeHtml(c.iso)}"${c.isPast ? " disabled" : ""}>${c.day}</button>`;
       }).join("");
       flexCalendarGrid.querySelectorAll(".flex-day[data-date]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -1434,10 +1452,36 @@
         return;
       }
       const timeVal = timeFilterEl.value;
+      const getMatchTimeValue = (m) => String(m.time != null ? m.time : m.pickupTime).replace(":00", "");
       const filtered = timeVal
-        ? win.matches.filter((m) => String(m.time) === timeVal)
+        ? win.matches.filter((m) => getMatchTimeValue(m) === timeVal)
         : win.matches;
       renderCards(filtered, win.searchUrl);
+    }
+
+    function getMatchHourValue(m) {
+      const raw = m && m.time != null ? m.time : m && m.pickupTime != null ? m.pickupTime : null;
+      if (raw == null) return null;
+      const parsed = parseInt(String(raw).replace(":00", ""), 10);
+      return Number.isFinite(parsed) ? String(parsed) : null;
+    }
+
+    function setTimeFilterOptions(matches, preferredValue = "") {
+      const values = Array.from(new Set(
+        (matches || [])
+          .map(getMatchHourValue)
+          .filter(Boolean)
+      )).sort((a, b) => Number(a) - Number(b));
+      const current = preferredValue || timeFilterEl.value;
+      const optionsHtml = ['<option value="">Все</option>']
+        .concat(values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}:00</option>`))
+        .join("");
+      timeFilterEl.innerHTML = optionsHtml;
+      if (current && values.includes(current)) {
+        timeFilterEl.value = current;
+      } else {
+        timeFilterEl.value = "";
+      }
     }
 
     function renderCards(matches, windowSearchUrl) {
@@ -1527,6 +1571,7 @@
         analysisBlock.style.display = "none";
       }
       const windows = buildWindows(matches);
+      setTimeFilterOptions(matches, timeFilterEl.value);
       window.windows = windows;
       window.selectedWindowKey = windows[0] ? windows[0].key : null;
       renderWindowTabs(windows, window.selectedWindowKey);
