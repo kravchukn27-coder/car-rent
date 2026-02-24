@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Car Scout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181c;
+      --surface2: #222228;
+      --text: #e4e4e7;
+      --textMuted: #a1a1aa;
+      --accent: #22c55e;
+      --accentHover: #16a34a;
+      --border: #27272a;
+      --radius: 12px;
+      --radiusSm: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle { color: var(--textMuted); font-size: 0.95rem; margin-bottom: 2rem; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .panel h2 { font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field label { font-size: 0.85rem; color: var(--textMuted); }
+    .field input, .field select {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1rem;
+      min-width: 140px;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+    }
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: var(--radiusSm);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0a;
+    }
+    .btn-primary:hover { background: var(--accentHover); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #2a2a30; }
+    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .mode-switch {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0 0 1rem 0;
+    }
+    .mode-btn {
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      background: var(--surface2);
+      color: var(--textMuted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .mode-btn.active {
+      border-color: var(--accent);
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent);
+    }
+    .status { font-size: 0.9rem; color: var(--textMuted); }
+    .status.loading { color: var(--accent); }
+    .status.error { color: #ef4444; }
+    .analysis {
+      background: var(--surface2);
+      border-radius: var(--radiusSm);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--accent);
+    }
+    .analysis h3 { font-size: 0.9rem; margin: 0 0 0.5rem 0; color: var(--textMuted); }
+    .analysis p { margin: 0; font-size: 1rem; }
+    .analysis .price { font-weight: 700; color: var(--accent); }
+    .analysis-link {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(34, 197, 94, 0.45);
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .analysis-link:hover {
+      color: var(--accent);
+      border-bottom-color: rgba(34, 197, 94, 0.9);
+    }
+    .sort-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .sort-row label { font-size: 0.9rem; color: var(--textMuted); }
+    .sort-row select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .window-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .window-tab {
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      background: var(--surface2);
+      color: var(--textMuted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .window-tab:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+    .window-tab.active {
+      border-color: var(--accent);
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent);
+    }
+    .window-tab .count { opacity: 0.8; font-size: 0.8em; margin-left: 0.35rem; }
+    .cards {
+      display: grid;
+      gap: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+    .card-price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .card-body { min-width: 0; }
+    .card-title { font-weight: 600; margin-bottom: 0.25rem; }
+    .card-meta { font-size: 0.9rem; color: var(--textMuted); }
+    .card-meta span { margin-right: 0.75rem; }
+    .card-badge {
+      background: var(--surface2);
+      color: var(--textMuted);
+      font-size: 0.8rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .card-link {
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .card-link:hover { text-decoration: underline; }
+    .card.target {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .search-link-row { margin: 0 0 0.75rem 0; }
+    .search-link-row .card-link { font-size: 0.95rem; }
+    .empty { text-align: center; padding: 3rem; color: var(--textMuted); }
+    .progress {
+      margin-top: 0.9rem;
+      width: 100%;
+      max-width: 520px;
+      display: none;
+    }
+    .progress-track {
+      height: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 250ms ease;
+    }
+    .progress-meta {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--textMuted);
+    }
+    .progress-phrase {
+      margin-top: 0.35rem;
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      min-height: 1.2em;
+      text-align: center;
+    }
+    .captcha-notice {
+      margin-top: 0.9rem;
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fecaca;
+      border-radius: var(--radiusSm);
+      padding: 0.65rem 0.8rem;
+      font-size: 0.9rem;
+    }
+    .captcha-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 9999;
+    }
+    .captcha-modal-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--surface);
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    .captcha-modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fecaca;
+      margin: 0 0 0.45rem 0;
+    }
+    .captcha-modal-text {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+    .captcha-modal-actions {
+      margin-top: 0.85rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .flex-calendar-block {
+      display: none;
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      padding: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    .flex-calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.6rem;
+    }
+    .flex-calendar-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .flex-cal-nav {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .flex-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.55rem;
+    }
+    .flex-time-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.55rem;
+    }
+    .flex-time-row .field {
+      min-width: 140px;
+    }
+    .flex-preset-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--textMuted);
+      border-radius: 999px;
+      padding: 0.26rem 0.65rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .flex-preset-btn:hover {
+      color: var(--text);
+      border-color: #3f3f46;
+    }
+    .regular-calendar-block {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      padding: 0.85rem;
+      margin-top: 0.25rem;
+    }
+    .regular-calendar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.45rem;
+    }
+    .regular-calendar-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-calendar-help {
+      font-size: 0.78rem;
+      color: var(--textMuted);
+      margin-bottom: 0.55rem;
+    }
+    .regular-selected-info {
+      font-size: 0.8rem;
+      color: var(--textMuted);
+      margin-bottom: 0.5rem;
+    }
+    .regular-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.28rem;
+    }
+    .regular-day {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 8px;
+      min-height: 42px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .regular-day.in-range {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.55);
+    }
+    .regular-day.candidate {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .regular-day.start,
+    .regular-day.end {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.8);
+      color: #bbf7d0;
+      font-weight: 700;
+    }
+    .regular-day.past,
+    .regular-day.muted {
+      background: #151519;
+      color: #6b7280;
+      border-color: #2b2b31;
+      cursor: not-allowed;
+    }
+    .flex-calendar-weekdays,
+    .flex-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.28rem;
+    }
+    .flex-calendar-weekdays div {
+      text-align: center;
+      font-size: 0.74rem;
+      color: var(--textMuted);
+      padding: 0.12rem 0;
+    }
+    .flex-day {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 8px;
+      min-height: 42px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .flex-day.muted {
+      opacity: 0.35;
+      cursor: default;
+    }
+    .flex-day.past {
+      background: #151519;
+      color: #6b7280;
+      border-color: #2b2b31;
+      cursor: not-allowed;
+    }
+    .flex-day.in-range {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.55);
+    }
+    .flex-day.start {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.8);
+      color: #bbf7d0;
+      font-weight: 700;
+    }
+    .flex-selected {
+      margin-top: 0.7rem;
+      font-size: 0.84rem;
+      color: var(--textMuted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .flex-times-info {
+      width: 100%;
+      font-size: 0.8rem;
+      color: var(--textMuted);
+      margin-bottom: 0.15rem;
+    }
+    .flex-chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.18rem 0.4rem 0.18rem 0.55rem;
+      background: var(--surface);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .flex-chip-remove {
+      border: 1px solid var(--border);
+      background: #1b1b20;
+      color: var(--textMuted);
+      border-radius: 999px;
+      width: 18px;
+      height: 18px;
+      line-height: 14px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0;
+    }
+    @media (max-width: 600px) {
+      .card { grid-template-columns: 1fr; }
+      .card-price { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Booking Car Scout</h1>
+    <p class="subtitle">Поиск выгодной аренды авто в Барселоне</p>
+
+    <div class="panel">
+      <h2>Параметры поиска</h2>
+      <div class="mode-switch">
+        <button type="button" id="modeRegularBtn" class="mode-btn active">Обычный поиск</button>
+        <button type="button" id="modeFlexBtn" class="mode-btn">Гибкий поиск</button>
+      </div>
+      <div class="field">
+        <label for="rentDays">Длительность аренды (дней)</label>
+        <input type="number" id="rentDays" min="1" max="7" step="1" value="2" />
+      </div>
+      <div class="form-row">
+        <div class="field" id="startDateField">
+          <label for="startDate">Дата начала</label>
+          <input type="date" id="startDate" />
+        </div>
+        <div class="field" id="endDateField">
+          <label for="endDate">Дата конца</label>
+          <input type="date" id="endDate" />
+        </div>
+        <div id="regularCalendarBlock" class="regular-calendar-block">
+          <div class="regular-calendar-head">
+            <button type="button" class="flex-cal-nav" id="regularPrevMonthBtn">◀</button>
+            <div class="regular-calendar-title" id="regularMonthTitle"></div>
+            <button type="button" class="flex-cal-nav" id="regularNextMonthBtn">▶</button>
+          </div>
+          <div class="regular-calendar-help">Клик 1: выбрать дату начала. Клик 2: выбрать дату конца (в пределах окна).</div>
+          <div id="regularSelectedInfo" class="regular-selected-info"></div>
+          <div class="flex-calendar-weekdays">
+            <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+          </div>
+          <div id="regularCalendarGrid" class="regular-calendar-grid"></div>
+        </div>
+        <div id="flexCalendarBlock" class="flex-calendar-block">
+          <div class="flex-calendar-head">
+            <button type="button" class="flex-cal-nav" id="flexPrevMonthBtn">◀</button>
+            <div class="flex-calendar-title" id="flexMonthTitle"></div>
+            <button type="button" class="flex-cal-nav" id="flexNextMonthBtn">▶</button>
+          </div>
+          <div class="flex-presets">
+            <button type="button" class="flex-preset-btn" id="presetWeekendsBtn">Выходные месяца</button>
+            <button type="button" class="flex-preset-btn" id="presetFridaysBtn">Каждую пятницу</button>
+            <button type="button" class="flex-preset-btn" id="presetClearBtn">Сбросить</button>
+          </div>
+          <div class="flex-time-row">
+            <div class="field">
+              <label for="flexTime1">Время окна 1</label>
+              <select id="flexTime1"></select>
+            </div>
+            <div class="field">
+              <label for="flexTime2">Время окна 2</label>
+              <select id="flexTime2"></select>
+            </div>
+          </div>
+          <div class="flex-calendar-weekdays">
+            <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+          </div>
+          <div id="flexCalendarGrid" class="flex-calendar-grid"></div>
+          <div id="flexSelectedWindows" class="flex-selected"></div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
+          <button type="button" class="btn btn-secondary" id="loadBtn">Загрузить последние результаты</button>
+          <span class="status" id="status"></span>
+        </div>
+        <div id="progressBlock" class="progress">
+          <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+          <div id="progressMeta" class="progress-meta"></div>
+          <div id="progressPhrase" class="progress-phrase"></div>
+        </div>
+        <div id="captchaNotice" class="captcha-notice"></div>
+      </div>
+    </div>
+
+    <div id="analysisBlock" style="display: none;"></div>
+    <div id="resultsBlock" style="display: none;">
+      <div class="window-tabs" id="windowTabs"></div>
+      <div class="sort-row">
+        <label for="timeFilter">Время выдачи:</label>
+        <select id="timeFilter">
+          <option value="">Все</option>
+          <option value="10">10:00</option>
+          <option value="16">16:00</option>
+        </select>
+        <label for="sort">Сортировка:</label>
+        <select id="sort">
+          <option value="price">По цене (сначала дешевле)</option>
+          <option value="priceDesc">По цене (сначала дороже)</option>
+          <option value="location">По локации (А–Я)</option>
+          <option value="date">По времени выдачи</option>
+        </select>
+      </div>
+      <div class="cards" id="cards"></div>
+    </div>
+    <div id="emptyBlock" class="empty">
+      Задайте параметры и нажмите «Запустить поиск» или «Загрузить последние результаты».
+    </div>
+  </div>
+  <div id="captchaModal" class="captcha-modal" aria-live="polite" aria-modal="true" role="dialog">
+    <div class="captcha-modal-card">
+      <p class="captcha-modal-title">Требуется ручная капча</p>
+      <p class="captcha-modal-text" id="captchaModalText">Открой проверку в браузере, пройди её и дождись автоматического продолжения поиска.</p>
+      <div class="captcha-modal-actions">
+        <button type="button" class="btn btn-secondary" id="captchaModalAckBtn">Понял</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const startDateEl = document.getElementById("startDate");
+    const endDateEl = document.getElementById("endDate");
+    const rentDaysEl = document.getElementById("rentDays");
+    const runBtn = document.getElementById("runBtn");
+    const loadBtn = document.getElementById("loadBtn");
+    const statusEl = document.getElementById("status");
+    const analysisBlock = document.getElementById("analysisBlock");
+    const resultsBlock = document.getElementById("resultsBlock");
+    const emptyBlock = document.getElementById("emptyBlock");
+    const sortEl = document.getElementById("sort");
+    const timeFilterEl = document.getElementById("timeFilter");
+    const cardsEl = document.getElementById("cards");
+    const windowTabsEl = document.getElementById("windowTabs");
+    const progressBlock = document.getElementById("progressBlock");
+    const progressFill = document.getElementById("progressFill");
+    const progressMeta = document.getElementById("progressMeta");
+    const progressPhrase = document.getElementById("progressPhrase");
+    const startDateField = document.getElementById("startDateField");
+    const endDateField = document.getElementById("endDateField");
+    const regularCalendarBlock = document.getElementById("regularCalendarBlock");
+    const regularMonthTitle = document.getElementById("regularMonthTitle");
+    const regularCalendarGrid = document.getElementById("regularCalendarGrid");
+    const regularSelectedInfo = document.getElementById("regularSelectedInfo");
+    const regularPrevMonthBtn = document.getElementById("regularPrevMonthBtn");
+    const regularNextMonthBtn = document.getElementById("regularNextMonthBtn");
+    const modeRegularBtn = document.getElementById("modeRegularBtn");
+    const modeFlexBtn = document.getElementById("modeFlexBtn");
+    const flexCalendarBlock = document.getElementById("flexCalendarBlock");
+    const flexMonthTitle = document.getElementById("flexMonthTitle");
+    const flexCalendarGrid = document.getElementById("flexCalendarGrid");
+    const flexPrevMonthBtn = document.getElementById("flexPrevMonthBtn");
+    const flexNextMonthBtn = document.getElementById("flexNextMonthBtn");
+    const flexSelectedWindows = document.getElementById("flexSelectedWindows");
+    const presetWeekendsBtn = document.getElementById("presetWeekendsBtn");
+    const presetFridaysBtn = document.getElementById("presetFridaysBtn");
+    const presetClearBtn = document.getElementById("presetClearBtn");
+    const flexTime1El = document.getElementById("flexTime1");
+    const flexTime2El = document.getElementById("flexTime2");
+    const captchaNotice = document.getElementById("captchaNotice");
+    const captchaModal = document.getElementById("captchaModal");
+    const captchaModalText = document.getElementById("captchaModalText");
+    const captchaModalAckBtn = document.getElementById("captchaModalAckBtn");
+    let progressTimer = null;
+    let targetMatchKey = null;
+    let resetTimeFilterTimer = null;
+    let wasCaptchaActive = false;
+    let captchaModalDismissed = false;
+    let searchMode = "regular";
+    let flexSelectedStarts = [];
+    const FLEX_MAX_WINDOWS = 6;
+    const FLEX_MIN_HOUR = 8;
+    const FLEX_MAX_HOUR = 18;
+    let flexForcedRentDays = null; // null => берем значение из поля rentDays
+    let flexViewMonth = (() => {
+      const d = new Date();
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
+    let regularViewMonth = (() => {
+      const d = new Date();
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
+    let regularAwaitingEndPick = false;
+    let lastProgressPercent = null;
+    let lastProgressPhraseIndex = -1;
+    const PROGRESS_PHRASES = [
+      "Ищем самые выгодные колёса в Барселоне…",
+      "Прочёсываем город в поисках идеальной машины…",
+      "Строим ваш идеальный план побега…",
+      "Торгуемся с прокатными богами…",
+      "Ищем машину, достойную этого путешествия.",
+      "Перерываем весь прокат, чтобы ты не переплатил ни евро.",
+      "Сейчас найдём вариант, от которого ты скажешь: “Вот это норм!”",
+      "Выжимаем максимум из проката.",
+      "Перелопачиваем прокат, чтобы не слить бабки впустую.",
+      "Ща будет выгодно. Очень выгодно.",
+      "Выбираем лучший вариант на выходные для Моей Кошки.",
+    ];
+
+    function getWindowKey(m) { return m.pickup + "|" + m.dropoff; }
+    function formatDateNoYear(iso) {
+      if (!iso) return "";
+      const [y, mo, d] = iso.split("-");
+      return (d || "") + "." + (mo || "");
+    }
+
+    function buildWindows(matches) {
+      const byKey = new Map();
+      for (const m of matches) {
+        const key = getWindowKey(m);
+        if (!byKey.has(key)) byKey.set(key, { key, pickup: m.pickup, dropoff: m.dropoff, matches: [] });
+        byKey.get(key).matches.push(m);
+      }
+      const list = Array.from(byKey.values());
+      list.sort((a, b) => a.pickup.localeCompare(b.pickup));
+      return list.map((w) => ({
+        key: w.key,
+        label: formatDateNoYear(w.pickup) + " – " + formatDateNoYear(w.dropoff),
+        count: w.matches.length,
+        minPrice: w.matches.reduce((min, m) => {
+          const v = Number(m.priceValue);
+          return Number.isFinite(v) ? Math.min(min, v) : min;
+        }, Infinity),
+        matches: w.matches,
+        searchUrl: w.matches[0] && w.matches[0].searchUrl ? w.matches[0].searchUrl : null,
+      }));
+    }
+
+    const MIN_RENT_DAYS = 1;
+    const MAX_RENT_DAYS = 7;
+    const MAX_WINDOW_DAYS = 7; // макс. дней в окне поиска (в какие дни ищем)
+
+    function toISODate(d) {
+      return d.toISOString().slice(0, 10);
+    }
+    function toLocalDateString(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+    function dateFromISO(iso) {
+      return new Date(iso + "T00:00:00");
+    }
+    function addDays(iso, n) {
+      const d = dateFromISO(iso);
+      d.setDate(d.getDate() + n);
+      return toLocalDateString(d);
+    }
+    function daysBetween(startIso, endIso) {
+      const a = dateFromISO(startIso);
+      const b = dateFromISO(endIso);
+      return Math.round((b - a) / (24 * 60 * 60 * 1000));
+    }
+    function searchWindowsCount(startIso, endIso) {
+      return daysBetween(startIso, endIso) + 1;
+    }
+    function clampRentDaysValue(rawValue) {
+      const parsed = parseInt(rawValue, 10);
+      if (!Number.isFinite(parsed)) return MIN_RENT_DAYS;
+      return Math.min(MAX_RENT_DAYS, Math.max(MIN_RENT_DAYS, parsed));
+    }
+    function getRentDaysForCalculations() {
+      return clampRentDaysValue(rentDaysEl.value);
+    }
+    function getEffectiveFlexRentDays() {
+      return Number.isFinite(flexForcedRentDays) ? flexForcedRentDays : getRentDaysForCalculations();
+    }
+    function formatHourLabel(h) {
+      return String(h).padStart(2, "0") + ":00";
+    }
+    function fillFlexTimeOptions() {
+      const options = [];
+      for (let h = FLEX_MIN_HOUR; h <= FLEX_MAX_HOUR; h++) {
+        options.push(`<option value="${h}">${formatHourLabel(h)}</option>`);
+      }
+      const html = options.join("");
+      flexTime1El.innerHTML = html;
+      flexTime2El.innerHTML = html;
+      flexTime1El.value = "10";
+      flexTime2El.value = "16";
+    }
+    function getRandomProgressPhrase() {
+      if (PROGRESS_PHRASES.length === 0) return "";
+      if (PROGRESS_PHRASES.length === 1) return PROGRESS_PHRASES[0];
+      let idx = Math.floor(Math.random() * PROGRESS_PHRASES.length);
+      if (idx === lastProgressPhraseIndex) {
+        idx = (idx + 1 + Math.floor(Math.random() * (PROGRESS_PHRASES.length - 1))) % PROGRESS_PHRASES.length;
+      }
+      lastProgressPhraseIndex = idx;
+      return PROGRESS_PHRASES[idx];
+    }
+    function getValidatedFlexTimes() {
+      const t1 = parseInt(flexTime1El.value, 10);
+      const t2 = parseInt(flexTime2El.value, 10);
+      const valid = (v) => Number.isFinite(v) && v >= FLEX_MIN_HOUR && v <= FLEX_MAX_HOUR;
+      if (!valid(t1) || !valid(t2)) {
+        return { ok: false, message: "Время в гибком режиме должно быть от 08:00 до 18:00." };
+      }
+      if (t1 === t2) {
+        return { ok: false, message: "Выбери два разных времени для гибкого поиска." };
+      }
+      return { ok: true, times: [t1, t2].sort((a, b) => a - b) };
+    }
+    function normalizeRentDaysInput() {
+      const clamped = getRentDaysForCalculations();
+      const asString = String(clamped);
+      if (rentDaysEl.value !== asString) rentDaysEl.value = asString;
+      return clamped;
+    }
+    function isDateInFlexRanges(iso) {
+      const rentDays = getEffectiveFlexRentDays();
+      return flexSelectedStarts.some((startIso) => iso >= startIso && iso <= addDays(startIso, rentDays));
+    }
+    function renderFlexSelectedWindows() {
+      const rentDays = getEffectiveFlexRentDays();
+      const timeInfo = getValidatedFlexTimes();
+      const timeInfoHtml = timeInfo.ok
+        ? `<div class="flex-times-info">Времена: ${formatHourLabel(timeInfo.times[0])} и ${formatHourLabel(timeInfo.times[1])}</div>`
+        : "";
+      if (!flexSelectedStarts.length) {
+        flexSelectedWindows.innerHTML = `${timeInfoHtml}<span>Выбери до 6 дат старта. Повторный клик по дате удаляет окно.</span>`;
+        return;
+      }
+      const chipsHtml = flexSelectedStarts
+        .map((startIso) => {
+          const endIso = addDays(startIso, rentDays);
+          return `<span class="flex-chip">${escapeHtml(startIso)} → ${escapeHtml(endIso)}<button type="button" class="flex-chip-remove" data-remove-start="${escapeHtml(startIso)}">×</button></span>`;
+        })
+        .join("");
+      flexSelectedWindows.innerHTML = timeInfoHtml + chipsHtml;
+      flexSelectedWindows.querySelectorAll(".flex-chip-remove").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const startIso = btn.dataset.removeStart;
+          const idx = flexSelectedStarts.indexOf(startIso);
+          if (idx >= 0) {
+            flexSelectedStarts.splice(idx, 1);
+            renderFlexCalendar();
+            renderFlexSelectedWindows();
+          }
+        });
+      });
+    }
+    function renderFlexCalendar() {
+      const year = flexViewMonth.getFullYear();
+      const month = flexViewMonth.getMonth();
+      const monthLabel = flexViewMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      flexMonthTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+      const firstDay = new Date(year, month, 1);
+      const offset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayIso = toLocalDateString(today);
+      const cells = [];
+      for (let i = 0; i < offset; i++) cells.push({ empty: true });
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = toLocalDateString(new Date(year, month, day));
+        const isStart = flexSelectedStarts.includes(iso);
+        const inRange = isDateInFlexRanges(iso);
+        const isPast = iso < todayIso;
+        cells.push({ iso, day, isStart, inRange, isPast });
+      }
+      while (cells.length % 7 !== 0) cells.push({ empty: true });
+      flexCalendarGrid.innerHTML = cells.map((c) => {
+        if (c.empty) return `<button type="button" class="flex-day muted" disabled></button>`;
+        return `<button type="button" class="flex-day${c.isPast ? " past" : ""}${c.isStart ? " start" : ""}${!c.isStart && c.inRange ? " in-range" : ""}" data-date="${escapeHtml(c.iso)}"${c.isPast ? " disabled" : ""}>${c.day}</button>`;
+      }).join("");
+      flexCalendarGrid.querySelectorAll(".flex-day[data-date]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const iso = btn.dataset.date;
+          if (btn.disabled) return;
+          const idx = flexSelectedStarts.indexOf(iso);
+          if (idx >= 0) {
+            flexSelectedStarts.splice(idx, 1);
+            flexForcedRentDays = null;
+          } else {
+            if (flexSelectedStarts.length >= FLEX_MAX_WINDOWS) {
+              setStatus("В гибком режиме можно выбрать не более 6 окон.", "error");
+              return;
+            }
+            flexForcedRentDays = null;
+            flexSelectedStarts.push(iso);
+            flexSelectedStarts.sort((a, b) => a.localeCompare(b));
+          }
+          renderFlexCalendar();
+          renderFlexSelectedWindows();
+        });
+      });
+    }
+    function getPresetStartDates(predicate) {
+      const year = flexViewMonth.getFullYear();
+      const month = flexViewMonth.getMonth();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const out = [];
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, month, day);
+        const iso = toLocalDateString(d);
+        if (iso < toLocalDateString(today)) continue;
+        if (predicate(d)) out.push(iso);
+      }
+      return out.slice(0, FLEX_MAX_WINDOWS);
+    }
+    function applyPreset(nextStarts) {
+      flexSelectedStarts = [...new Set(nextStarts)].sort((a, b) => a.localeCompare(b)).slice(0, FLEX_MAX_WINDOWS);
+      renderFlexCalendar();
+      renderFlexSelectedWindows();
+      if (flexSelectedStarts.length === 0) {
+        setStatus("Для текущего месяца нет подходящих дат по этому пресету.", "error");
+      } else {
+        setStatus("");
+      }
+    }
+    function setSearchMode(nextMode) {
+      searchMode = nextMode;
+      const isFlex = searchMode === "flex";
+      modeRegularBtn.classList.toggle("active", !isFlex);
+      modeFlexBtn.classList.toggle("active", isFlex);
+      startDateField.style.display = "none";
+      endDateField.style.display = "none";
+      regularCalendarBlock.style.display = isFlex ? "none" : "block";
+      flexCalendarBlock.style.display = isFlex ? "block" : "none";
+      if (isFlex) {
+        renderFlexCalendar();
+        renderFlexSelectedWindows();
+      } else {
+        renderRegularCalendar();
+        setStatus("");
+      }
+    }
+
+    function setDefaultDates() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      startDateEl.value = toLocalDateString(d);
+      const rentDays = normalizeRentDaysInput();
+      const end = new Date(d);
+      end.setDate(end.getDate() + rentDays);
+      endDateEl.value = toLocalDateString(end);
+      updateEndDateLimits();
+    }
+    function updateEndDateLimits() {
+      const start = startDateEl.value;
+      if (!start) return;
+      const startD = dateFromISO(start);
+      const minEnd = new Date(startD);
+      minEnd.setDate(minEnd.getDate());
+      endDateEl.min = toLocalDateString(minEnd);
+      const maxEnd = new Date(startD);
+      maxEnd.setDate(maxEnd.getDate() + MAX_WINDOW_DAYS - 1);
+      endDateEl.max = toLocalDateString(maxEnd);
+      const end = endDateEl.value;
+      if (!end || end < endDateEl.min) {
+        endDateEl.value = endDateEl.min;
+      }
+      if (endDateEl.value > endDateEl.max) {
+        endDateEl.value = endDateEl.max;
+      }
+    }
+    function renderRegularCalendar() {
+      const year = regularViewMonth.getFullYear();
+      const month = regularViewMonth.getMonth();
+      const monthLabel = regularViewMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      regularMonthTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+      const firstDay = new Date(year, month, 1);
+      const offset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayIso = toLocalDateString(today);
+      const startIso = startDateEl.value || "";
+      const endIso = endDateEl.value || "";
+      const candidateMaxIso = startIso ? addDays(startIso, MAX_WINDOW_DAYS - 1) : "";
+      regularSelectedInfo.textContent = startIso && endIso
+        ? `Выбрано: ${startIso} → ${endIso}`
+        : startIso
+          ? `Выбрано: ${startIso} → ...`
+          : "Выбрано: —";
+      const cells = [];
+      for (let i = 0; i < offset; i++) cells.push({ empty: true });
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = toLocalDateString(new Date(year, month, day));
+        const isPast = iso < todayIso;
+        const isStart = iso === startIso;
+        const isEnd = iso === endIso;
+        const inRange = startIso && endIso && iso > startIso && iso < endIso;
+        const candidate = regularAwaitingEndPick && startIso && iso >= startIso && iso <= candidateMaxIso;
+        cells.push({ iso, day, isPast, isStart, isEnd, inRange, candidate });
+      }
+      while (cells.length % 7 !== 0) cells.push({ empty: true });
+      regularCalendarGrid.innerHTML = cells.map((c) => {
+        if (c.empty) return `<button type="button" class="regular-day muted" disabled></button>`;
+        return `<button type="button" class="regular-day${c.isPast ? " past" : ""}${c.isStart ? " start" : ""}${c.isEnd ? " end" : ""}${c.inRange ? " in-range" : ""}${c.candidate && !c.isStart ? " candidate" : ""}" data-date="${escapeHtml(c.iso)}"${c.isPast ? " disabled" : ""}>${c.day}</button>`;
+      }).join("");
+      regularCalendarGrid.querySelectorAll(".regular-day[data-date]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          const iso = btn.dataset.date;
+          const sameAsStart = iso === startDateEl.value;
+          if (sameAsStart) {
+            startDateEl.value = "";
+            endDateEl.value = "";
+            regularAwaitingEndPick = false;
+            setStatus("");
+            renderRegularCalendar();
+            return;
+          }
+          if (!startDateEl.value || !regularAwaitingEndPick) {
+            startDateEl.value = iso;
+            updateEndDateLimits();
+            endDateEl.value = iso;
+            regularAwaitingEndPick = true;
+            renderRegularCalendar();
+            return;
+          }
+          if (iso < startDateEl.value || iso > addDays(startDateEl.value, MAX_WINDOW_DAYS - 1)) {
+            setStatus(`Дата конца должна быть в диапазоне ${endDateEl.min} — ${endDateEl.max}.`, "error");
+            return;
+          }
+          endDateEl.value = iso;
+          regularAwaitingEndPick = false;
+          setStatus("");
+          renderRegularCalendar();
+        });
+      });
+    }
+    setDefaultDates();
+    fillFlexTimeOptions();
+    renderRegularCalendar();
+    startDateEl.addEventListener("change", () => {
+      updateEndDateLimits();
+      renderRegularCalendar();
+    });
+    endDateEl.addEventListener("change", renderRegularCalendar);
+    rentDaysEl.addEventListener("input", () => {
+      updateEndDateLimits();
+      renderRegularCalendar();
+      if (searchMode === "flex") {
+        renderFlexCalendar();
+        renderFlexSelectedWindows();
+      }
+    });
+    rentDaysEl.addEventListener("change", () => {
+      normalizeRentDaysInput();
+      updateEndDateLimits();
+      renderRegularCalendar();
+      if (searchMode === "flex") {
+        renderFlexCalendar();
+        renderFlexSelectedWindows();
+      }
+    });
+    rentDaysEl.addEventListener("blur", () => {
+      normalizeRentDaysInput();
+      updateEndDateLimits();
+      renderRegularCalendar();
+      if (searchMode === "flex") {
+        renderFlexCalendar();
+        renderFlexSelectedWindows();
+      }
+    });
+    regularPrevMonthBtn.addEventListener("click", () => {
+      regularViewMonth = new Date(regularViewMonth.getFullYear(), regularViewMonth.getMonth() - 1, 1);
+      renderRegularCalendar();
+    });
+    regularNextMonthBtn.addEventListener("click", () => {
+      regularViewMonth = new Date(regularViewMonth.getFullYear(), regularViewMonth.getMonth() + 1, 1);
+      renderRegularCalendar();
+    });
+    modeRegularBtn.addEventListener("click", () => setSearchMode("regular"));
+    modeFlexBtn.addEventListener("click", () => setSearchMode("flex"));
+    flexPrevMonthBtn.addEventListener("click", () => {
+      flexViewMonth = new Date(flexViewMonth.getFullYear(), flexViewMonth.getMonth() - 1, 1);
+      renderFlexCalendar();
+    });
+    flexNextMonthBtn.addEventListener("click", () => {
+      flexViewMonth = new Date(flexViewMonth.getFullYear(), flexViewMonth.getMonth() + 1, 1);
+      renderFlexCalendar();
+    });
+    presetWeekendsBtn.addEventListener("click", () => {
+      // Выходные: фиксированные окна только сб->вс (игнорируем текущее rentDays).
+      flexForcedRentDays = 1;
+      const year = flexViewMonth.getFullYear();
+      const month = flexViewMonth.getMonth();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayIso = toLocalDateString(today);
+      const starts = [];
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, month, day);
+        const iso = toLocalDateString(d);
+        if (iso < todayIso) continue;
+        if (d.getDay() !== 6) continue; // суббота
+        const sunday = new Date(d);
+        sunday.setDate(sunday.getDate() + 1);
+        if (sunday.getMonth() !== month) continue; // воскресенье должно быть в том же отображаемом месяце
+        starts.push(iso);
+      }
+      applyPreset(starts);
+    });
+    presetFridaysBtn.addEventListener("click", () => {
+      flexForcedRentDays = null;
+      applyPreset(getPresetStartDates((d) => d.getDay() === 5));
+    });
+    presetClearBtn.addEventListener("click", () => {
+      flexSelectedStarts = [];
+      flexForcedRentDays = null;
+      renderFlexCalendar();
+      renderFlexSelectedWindows();
+      setStatus("");
+    });
+    flexTime1El.addEventListener("change", () => {
+      renderFlexSelectedWindows();
+    });
+    flexTime2El.addEventListener("change", () => {
+      renderFlexSelectedWindows();
+    });
+    setSearchMode("regular");
+
+    function setStatus(msg, className = "") {
+      statusEl.textContent = msg;
+      statusEl.className = "status " + className;
+    }
+    function stopProgressPolling() {
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+    }
+    function hideProgress() {
+      progressBlock.style.display = "none";
+      progressFill.style.width = "0%";
+      progressMeta.textContent = "";
+      progressPhrase.textContent = "";
+      lastProgressPercent = null;
+      lastProgressPhraseIndex = -1;
+      captchaNotice.style.display = "none";
+      captchaNotice.textContent = "";
+      captchaModal.style.display = "none";
+      wasCaptchaActive = false;
+      captchaModalDismissed = false;
+    }
+    function showProgress() {
+      progressBlock.style.display = "block";
+      progressFill.style.width = "0%";
+      progressMeta.textContent = "Подготовка...";
+      progressPhrase.textContent = "";
+      lastProgressPercent = null;
+      lastProgressPhraseIndex = -1;
+      captchaNotice.style.display = "none";
+      captchaNotice.textContent = "";
+      captchaModal.style.display = "none";
+      wasCaptchaActive = false;
+      captchaModalDismissed = false;
+    }
+    async function pollProgressOnce() {
+      try {
+        const r = await fetch("/api/progress");
+        if (!r.ok) return null;
+        const p = await r.json();
+        const percent = Number.isFinite(p.percent) ? p.percent : 0;
+        progressFill.style.width = Math.max(0, Math.min(100, percent)) + "%";
+        const eta = p.etaSec && p.etaSec > 0 ? Math.ceil(p.etaSec / 60) : null;
+        const modeText = p.runMode === "headless"
+          ? "режим: скрытый"
+          : p.runMode === "headed"
+            ? "режим: видимый"
+            : "режим: инициализация";
+        progressMeta.textContent = eta
+          ? `Прогресс: ${percent}% · осталось ~${eta} мин`
+          : `Прогресс: ${percent}%`;
+        progressMeta.textContent += ` · ${modeText}`;
+        if (lastProgressPercent !== percent) {
+          progressPhrase.textContent = getRandomProgressPhrase();
+          lastProgressPercent = percent;
+        }
+        if (p.captchaRequired) {
+          captchaNotice.style.display = "block";
+          captchaNotice.textContent = "Нужна ручная капча: пройди проверку в открытом окне браузера, затем поиск продолжится автоматически.";
+          captchaModalText.textContent = "Найди окно Booking, пройди капчу и вернись — скрипт продолжит поиск без повторного запуска.";
+          if (!captchaModalDismissed) {
+            captchaModal.style.display = "flex";
+          }
+          setStatus("Требуется ручная капча.", "error");
+          wasCaptchaActive = true;
+        } else {
+          captchaNotice.style.display = "none";
+          captchaNotice.textContent = "";
+          captchaModal.style.display = "none";
+          captchaModalDismissed = false;
+          if (wasCaptchaActive) {
+            setStatus("Капча пройдена, продолжаю поиск…", "loading");
+            wasCaptchaActive = false;
+          }
+        }
+        return p;
+      } catch (_) {
+        return null;
+      }
+    }
+    captchaModalAckBtn.addEventListener("click", () => {
+      captchaModalDismissed = true;
+      captchaModal.style.display = "none";
+    });
+
+    function sortMatches(matches, sortBy) {
+      const arr = [...matches];
+      if (sortBy === "price") arr.sort((a, b) => a.priceValue - b.priceValue);
+      else if (sortBy === "priceDesc") arr.sort((a, b) => b.priceValue - a.priceValue);
+      else if (sortBy === "location") arr.sort((a, b) => (a.location || "").localeCompare(b.location || ""));
+      else if (sortBy === "date") arr.sort((a, b) => (a.pickup + " " + a.time).localeCompare(b.pickup + " " + b.time));
+      return arr;
+    }
+
+    function renderWindowTabs(windows, selectedKey) {
+      windowTabsEl.innerHTML = windows.map((w) => `
+        <button type="button" class="window-tab ${w.key === selectedKey ? "active" : ""}" data-window="${escapeHtml(w.key)}">
+          ${escapeHtml(w.label)} · ${Number.isFinite(w.minPrice) ? `€${w.minPrice}` : "—"}<span class="count">(${w.count})</span>
+        </button>
+      `).join("");
+      windowTabsEl.querySelectorAll(".window-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          window.selectedWindowKey = btn.dataset.window;
+          renderWindowTabs(windows, window.selectedWindowKey);
+          applyFiltersAndRender();
+        });
+      });
+    }
+
+    function applyFiltersAndRender() {
+      const win = window.windows && window.selectedWindowKey
+        ? window.windows.find((w) => w.key === window.selectedWindowKey)
+        : null;
+      if (!win) {
+        renderCards([], null);
+        return;
+      }
+      const timeVal = timeFilterEl.value;
+      const filtered = timeVal
+        ? win.matches.filter((m) => String(m.time) === timeVal)
+        : win.matches;
+      renderCards(filtered, win.searchUrl);
+    }
+
+    function renderCards(matches, windowSearchUrl) {
+      const sortBy = sortEl.value;
+      const sorted = sortMatches(matches, sortBy);
+      const linkBlock = windowSearchUrl
+        ? `<p class="search-link-row"><a href="${escapeHtml(windowSearchUrl)}" target="_blank" rel="noopener" class="card-link">Открыть поиск на Booking для этого окна дат →</a></p>`
+        : "";
+      cardsEl.innerHTML = linkBlock + sorted.map((m) => {
+        const cardKey = [m.pickup, m.dropoff, m.time, m.supplier, m.location, m.model, m.priceValue].join("|");
+        return `
+        <div class="card${targetMatchKey && targetMatchKey === cardKey ? " target" : ""}" data-match-key="${escapeHtml(cardKey)}">
+          <div class="card-price">${m.priceText}</div>
+          <div class="card-body">
+            <div class="card-title">${escapeHtml(m.model)}</div>
+            <div class="card-meta">
+              <span>${escapeHtml(m.supplier)}</span>
+              <span>${escapeHtml(m.location)}</span>
+              <span>${m.pickup} → ${m.dropoff}, ${m.time}:00</span>
+            </div>
+          </div>
+          <div class="card-badge">${escapeHtml(m.location)}</div>
+        </div>
+      `;
+      }).join("");
+      if (targetMatchKey) {
+        const targetCard = cardsEl.querySelector(`.card[data-match-key="${CSS.escape(targetMatchKey)}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => {
+            targetCard.classList.remove("target");
+          }, 3000);
+        }
+        targetMatchKey = null;
+      }
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return "";
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function showResults(data) {
+      const matches = data.matches || [];
+      if (matches.length === 0) {
+        resultsBlock.style.display = "none";
+        analysisBlock.style.display = "none";
+        emptyBlock.style.display = "block";
+        emptyBlock.textContent = "Нет результатов для отображения.";
+        return;
+      }
+      emptyBlock.style.display = "none";
+      resultsBlock.style.display = "block";
+      const analysis = data.analysis;
+      if (analysis && analysis.globalMin) {
+        analysisBlock.style.display = "block";
+        const gm = analysis.globalMin;
+        const timeStr = gm.time != null ? String(gm.time) + ":00" : "";
+        analysisBlock.innerHTML = `
+          <h3>Анализ</h3>
+          <p><button type="button" class="analysis-link" id="jumpToCheapestBtn">Самое дешёвое окно:</button> ${escapeHtml(gm.pickup)} → ${escapeHtml(gm.dropoff)} → ${escapeHtml(timeStr)} — <span class="price">${escapeHtml(gm.priceText)}</span> — ${escapeHtml(gm.location)} — ${escapeHtml(gm.supplier)}</p>
+        `;
+        const jumpBtn = document.getElementById("jumpToCheapestBtn");
+        if (jumpBtn) {
+          jumpBtn.addEventListener("click", () => {
+            const targetWindowKey = gm.pickup + "|" + gm.dropoff;
+            const targetTime = gm.time != null ? String(gm.time) : "";
+            targetMatchKey = [gm.pickup, gm.dropoff, gm.time, gm.supplier, gm.location, gm.model, gm.priceValue].join("|");
+            if (window.windows && window.windows.some((w) => w.key === targetWindowKey)) {
+              window.selectedWindowKey = targetWindowKey;
+              renderWindowTabs(window.windows, window.selectedWindowKey);
+            }
+            if (targetTime) timeFilterEl.value = targetTime;
+            applyFiltersAndRender();
+            if (resetTimeFilterTimer) clearTimeout(resetTimeFilterTimer);
+            resetTimeFilterTimer = setTimeout(() => {
+              timeFilterEl.value = "";
+              applyFiltersAndRender();
+            }, 3000);
+          });
+        }
+      } else {
+        analysisBlock.style.display = "none";
+      }
+      const windows = buildWindows(matches);
+      window.windows = windows;
+      window.selectedWindowKey = windows[0] ? windows[0].key : null;
+      renderWindowTabs(windows, window.selectedWindowKey);
+      const current = windows.find((w) => w.key === window.selectedWindowKey);
+      if (current) applyFiltersAndRender();
+      else renderCards([], null);
+    }
+
+    sortEl.addEventListener("change", applyFiltersAndRender);
+    timeFilterEl.addEventListener("change", applyFiltersAndRender);
+
+    loadBtn.addEventListener("click", async () => {
+      setStatus("Загрузка…", "loading");
+      try {
+        const r = await fetch("/api/results");
+        if (!r.ok) throw new Error(r.status === 404 ? "Файл результатов не найден. Сначала запустите поиск из терминала (npm run dev)." : "Ошибка загрузки");
+        const data = await r.json();
+        window.lastResults = data;
+        showResults(data);
+        setStatus("Загружено.");
+      } catch (e) {
+        setStatus(e.message, "error");
+      }
+    });
+
+    runBtn.addEventListener("click", async () => {
+      const rentDays = normalizeRentDaysInput();
+      if (rentDays < MIN_RENT_DAYS || rentDays > MAX_RENT_DAYS) {
+        setStatus("Длительность аренды: от " + MIN_RENT_DAYS + " до " + MAX_RENT_DAYS + " дней.", "error");
+        return;
+      }
+      const isFlex = searchMode === "flex";
+      let startDate = null;
+      let endDate = null;
+      let pickupDates = null;
+      if (isFlex) {
+        if (!flexSelectedStarts.length) {
+          setStatus("Для гибкого поиска выбери хотя бы одно окно в календаре.", "error");
+          return;
+        }
+        if (flexSelectedStarts.length > FLEX_MAX_WINDOWS) {
+          setStatus("В гибком режиме можно выбрать не более 6 окон.", "error");
+          return;
+        }
+        const flexTimesCheck = getValidatedFlexTimes();
+        if (!flexTimesCheck.ok) {
+          setStatus(flexTimesCheck.message, "error");
+          return;
+        }
+        pickupDates = [...flexSelectedStarts];
+      } else {
+        startDate = startDateEl.value;
+        endDate = endDateEl.value;
+        if (!startDate || !endDate) {
+          setStatus("Укажите дату начала и дату конца.", "error");
+          return;
+        }
+        const horizon = searchWindowsCount(startDate, endDate);
+        if (horizon < 1 || horizon > MAX_WINDOW_DAYS) {
+          setStatus("Количество окон поиска: от 1 до " + MAX_WINDOW_DAYS + ".", "error");
+          return;
+        }
+      }
+      runBtn.disabled = true;
+      showProgress();
+      setStatus("Запуск поиска…", "loading");
+      stopProgressPolling();
+      progressTimer = setInterval(() => {
+        pollProgressOnce().catch(() => {});
+      }, 1500);
+      try {
+        const r = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isFlex
+              ? { rentDays: getEffectiveFlexRentDays(), pickupDates, pickupTimes: getValidatedFlexTimes().times }
+              : { startDate, endDate, rentDays }
+          ),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          const detail = (data.stderr || "").slice(0, 400).trim();
+          const msg = detail ? (data.error || "Ошибка") + " — " + detail : (data.error || "Ошибка запуска");
+          throw new Error(msg);
+        }
+        await pollProgressOnce();
+        stopProgressPolling();
+        hideProgress();
+        setStatus("Поиск завершён. Загружаю результаты…", "loading");
+        const res = await fetch("/api/results");
+        if (!res.ok) throw new Error("Не удалось загрузить результаты");
+        const results = await res.json();
+        window.lastResults = results;
+        showResults(results);
+        setStatus("Готово.");
+      } catch (e) {
+        stopProgressPolling();
+        hideProgress();
+        setStatus(e.message, "error");
+      } finally {
+        stopProgressPolling();
+        runBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

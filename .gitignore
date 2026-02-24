@@ -1,0 +1,10 @@
+node_modules/
+results.json
+results.csv
+debug.png
+.pw-profile/
+.pw-profile-ui/
+.env
+.env.local
+*.log
+.cursor/

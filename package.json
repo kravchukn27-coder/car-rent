@@ -1,0 +1,24 @@
+{
+  "name": "booking-car-scout",
+  "version": "1.0.0",
+  "description": "Booking.com car rental price scanner",
+  "main": "set_location.js",
+  "type": "commonjs",
+  "scripts": {
+    "run": "node set_location.js",
+    "dev": "nodemon --watch set_location.js --delay 800ms set_location.js",
+    "start": "node server.js",
+    "ui": "node server.js",
+    "install-browsers": "playwright install chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "playwright": "^1.58.2"
+  }
+}
