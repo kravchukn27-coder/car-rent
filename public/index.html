@@ -9,16 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f0f12;
-      --surface: #18181c;
-      --surface2: #222228;
-      --text: #e4e4e7;
-      --textMuted: #a1a1aa;
-      --accent: #22c55e;
-      --accentHover: #16a34a;
-      --border: #27272a;
-      --radius: 12px;
-      --radiusSm: 8px;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface2: #eef3f8;
+      --text: #1a1f36;
+      --textMuted: #5f6b7a;
+      --accent: #006ce4;
+      --accentHover: #0059be;
+      --border: #c6d4e3;
+      --radius: 14px;
+      --radiusSm: 10px;
     }
     * { box-sizing: border-box; }
     body {
@@ -29,14 +29,26 @@
       min-height: 100vh;
       line-height: 1.5;
     }
-    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
-    h1 {
-      font-size: 1.75rem;
+    .container { max-width: 1080px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    .hero {
+      margin-bottom: 1rem;
+      background: linear-gradient(115deg, #003b95 0%, #006ce4 70%, #2d8cff 100%);
+      border-radius: calc(var(--radius) + 2px);
+      color: #f7fbff;
+      padding: 1.25rem 1.25rem 3.3rem;
+      box-shadow: 0 14px 38px rgba(0, 57, 140, 0.22);
+    }
+    .hero-title {
+      font-size: 2rem;
       font-weight: 700;
-      margin-bottom: 0.5rem;
+      margin: 0 0 0.35rem 0;
       letter-spacing: -0.02em;
     }
-    .subtitle { color: var(--textMuted); font-size: 0.95rem; margin-bottom: 2rem; }
+    .hero-subtitle {
+      color: rgba(244, 250, 255, 0.92);
+      font-size: 0.98rem;
+      margin: 0;
+    }
     .panel {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -44,15 +56,51 @@
       padding: 1.5rem;
       margin-bottom: 1.5rem;
     }
-    .panel h2 { font-size: 1rem; font-weight: 600; margin: 0 0 1rem 0; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .search-panel {
+      margin-top: -2.35rem;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 16px 36px rgba(26, 31, 54, 0.12);
+    }
+    .panel h2 { font-size: 0.82rem; font-weight: 700; margin: 0 0 1rem 0; color: #1f4fa9; text-transform: uppercase; letter-spacing: 0.07em; }
     .form-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .search-top-row .field {
+      flex: 1 1 190px;
+    }
+    .search-top-row .field-days {
+      flex: 0 1 180px;
+    }
+    .search-top-row .field input,
+    .search-top-row .field select {
+      width: 100%;
+      min-width: 0;
+    }
+    .search-top-row .actions {
+      margin-left: auto;
+      justify-content: flex-end;
+      flex: 1 1 320px;
+    }
+    .search-top-row .status {
+      width: 100%;
+      text-align: right;
+      color: #355e8f;
+      min-height: 1.2rem;
+    }
+    .search-meta-row {
+      align-items: flex-start;
+    }
+    .search-meta-row .progress,
+    .search-meta-row .captcha-notice {
+      max-width: 100%;
+      flex: 1 1 280px;
+    }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }
-    .field label { font-size: 0.85rem; color: var(--textMuted); }
+    .field label { font-size: 0.82rem; color: var(--textMuted); font-weight: 600; }
     .field input, .field select {
-      padding: 0.6rem 0.75rem;
-      border: 1px solid var(--border);
+      padding: 0.7rem 0.8rem;
+      border: 1px solid #9fb4c9;
       border-radius: var(--radiusSm);
-      background: var(--surface2);
+      background: #ffffff;
       color: var(--text);
       font-size: 1rem;
       min-width: 140px;
@@ -60,55 +108,59 @@
     .field input:focus, .field select:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+      box-shadow: 0 0 0 3px rgba(0, 108, 228, 0.18);
     }
     .btn {
       padding: 0.65rem 1.25rem;
-      border: none;
+      border: 1px solid transparent;
       border-radius: var(--radiusSm);
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s, transform 0.05s;
+      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
     }
     .btn-primary {
       background: var(--accent);
-      color: #0a0a0a;
+      color: #ffffff;
     }
     .btn-primary:hover { background: var(--accentHover); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-secondary {
-      background: var(--surface2);
+      background: #ffffff;
       color: var(--text);
-      border: 1px solid var(--border);
+      border: 1px solid #9fb4c9;
     }
-    .btn-secondary:hover { background: #2a2a30; }
+    .btn-secondary:hover { background: #edf3f9; }
     .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
     .mode-switch {
       display: flex;
       gap: 0.5rem;
       margin: 0 0 1rem 0;
+      padding: 0.25rem;
+      background: #eef3f8;
+      border-radius: 999px;
+      border: 1px solid #d4e1ee;
     }
     .mode-btn {
-      padding: 0.5rem 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radiusSm);
-      background: var(--surface2);
+      padding: 0.45rem 0.9rem;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
       color: var(--textMuted);
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
     }
     .mode-btn.active {
-      border-color: var(--accent);
-      background: rgba(34, 197, 94, 0.12);
-      color: var(--accent);
+      border-color: #bfd3e6;
+      background: #ffffff;
+      color: #003b95;
     }
     .status { font-size: 0.9rem; color: var(--textMuted); }
     .status.loading { color: var(--accent); }
     .status.error { color: #ef4444; }
     .analysis {
-      background: var(--surface2);
+      background: #eef3f8;
       border-radius: var(--radiusSm);
       padding: 1rem 1.25rem;
       margin-bottom: 1.5rem;
@@ -126,12 +178,12 @@
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
-      border-bottom: 1px dashed rgba(34, 197, 94, 0.45);
+      border-bottom: 1px dashed rgba(0, 108, 228, 0.45);
       transition: color 0.15s ease, border-color 0.15s ease;
     }
     .analysis-link:hover {
       color: var(--accent);
-      border-bottom-color: rgba(34, 197, 94, 0.9);
+      border-bottom-color: rgba(0, 108, 228, 0.9);
     }
     .sort-row {
       display: flex;
@@ -143,9 +195,9 @@
     .sort-row label { font-size: 0.9rem; color: var(--textMuted); }
     .sort-row select {
       padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
+      border: 1px solid #9fb4c9;
       border-radius: var(--radiusSm);
-      background: var(--surface2);
+      background: #ffffff;
       color: var(--text);
       font-size: 0.9rem;
       cursor: pointer;
@@ -158,22 +210,22 @@
     }
     .window-tab {
       padding: 0.6rem 1rem;
-      border: 1px solid var(--border);
+      border: 1px solid #c7d7e8;
       border-radius: var(--radiusSm);
-      background: var(--surface2);
+      background: #eef3f8;
       color: var(--textMuted);
       font-size: 0.9rem;
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
     .window-tab:hover {
-      background: var(--surface);
+      background: #ffffff;
       color: var(--text);
     }
     .window-tab.active {
       border-color: var(--accent);
-      background: rgba(34, 197, 94, 0.12);
-      color: var(--accent);
+      background: rgba(0, 108, 228, 0.12);
+      color: #00459b;
     }
     .window-tab .count { opacity: 0.8; font-size: 0.8em; margin-left: 0.35rem; }
     .cards {
@@ -305,7 +357,7 @@
     .flex-calendar-block {
       display: none;
       width: 100%;
-      background: var(--surface2);
+      background: #edf3f9;
       border: 1px solid var(--border);
       border-radius: var(--radiusSm);
       padding: 0.85rem;
@@ -324,7 +376,7 @@
     }
     .flex-cal-nav {
       border: 1px solid var(--border);
-      background: var(--surface);
+      background: #ffffff;
       color: var(--text);
       border-radius: 6px;
       padding: 0.2rem 0.5rem;
@@ -348,7 +400,7 @@
     }
     .flex-preset-btn {
       border: 1px solid var(--border);
-      background: var(--surface);
+      background: #ffffff;
       color: var(--textMuted);
       border-radius: 999px;
       padding: 0.26rem 0.65rem;
@@ -362,7 +414,7 @@
     }
     .regular-calendar-block {
       width: 100%;
-      background: var(--surface2);
+      background: #edf3f9;
       border: 1px solid var(--border);
       border-radius: var(--radiusSm);
       padding: 0.85rem;
@@ -384,6 +436,25 @@
       color: var(--textMuted);
       margin-bottom: 0.55rem;
     }
+    .regular-calendar-dual {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .regular-calendar-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radiusSm);
+      padding: 0.65rem;
+    }
+    .regular-calendar-label {
+      font-size: 0.78rem;
+      color: var(--textMuted);
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     .regular-selected-info {
       font-size: 0.8rem;
       color: var(--textMuted);
@@ -396,36 +467,52 @@
     }
     .regular-day {
       border: 1px solid var(--border);
-      background: var(--surface);
+      background: #ffffff;
       color: var(--text);
-      border-radius: 8px;
-      min-height: 42px;
+      border-radius: 999px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       font-size: 0.84rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      justify-self: center;
     }
     .regular-day.in-range {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #066c4f;
+      font-weight: 600;
     }
     .regular-day.candidate {
-      background: rgba(59, 130, 246, 0.1);
-      border-color: rgba(59, 130, 246, 0.4);
+      background: #ffffff;
+      border-color: #006ce4;
+      border-style: dashed;
+      color: #355e8f;
+      font-weight: 500;
     }
     .regular-day.start,
     .regular-day.end {
-      background: rgba(34, 197, 94, 0.18);
-      border-color: rgba(34, 197, 94, 0.8);
-      color: #bbf7d0;
+      background: rgba(0, 108, 228, 0.2);
+      border-color: rgba(0, 108, 228, 0.65);
+      color: #003b95;
       font-weight: 700;
     }
-    .regular-day.past,
+    .regular-day.end {
+      box-shadow: inset 0 0 0 2px rgba(0, 59, 149, 0.42);
+    }
     .regular-day.muted {
-      background: #151519;
-      color: #6b7280;
-      border-color: #2b2b31;
+      background: transparent;
+      border-color: transparent;
+      color: #c2ccd8;
+      cursor: default;
+    }
+    .regular-day.past,
+    .regular-day.unavailable {
+      background: #f1f5f9;
+      color: #8b9ab0;
+      border-color: #d8e1ec;
       cursor: not-allowed;
     }
     .flex-calendar-weekdays,
@@ -442,24 +529,28 @@
     }
     .flex-day {
       border: 1px solid var(--border);
-      background: var(--surface);
+      background: #ffffff;
       color: var(--text);
-      border-radius: 8px;
-      min-height: 42px;
+      border-radius: 999px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       font-size: 0.84rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      justify-self: center;
     }
     .flex-day.muted {
-      opacity: 0.35;
+      background: transparent;
+      border-color: transparent;
+      color: #c2ccd8;
       cursor: default;
     }
     .flex-day.past {
-      background: #151519;
-      color: #6b7280;
-      border-color: #2b2b31;
+      background: #f1f5f9;
+      color: #8b9ab0;
+      border-color: #d8e1ec;
       cursor: not-allowed;
     }
     .flex-day.in-range {
@@ -467,9 +558,9 @@
       border-color: rgba(59, 130, 246, 0.55);
     }
     .flex-day.start {
-      background: rgba(34, 197, 94, 0.18);
-      border-color: rgba(34, 197, 94, 0.8);
-      color: #bbf7d0;
+      background: rgba(0, 108, 228, 0.2);
+      border-color: rgba(0, 108, 228, 0.65);
+      color: #003b95;
       font-weight: 700;
     }
     .flex-selected {
@@ -490,15 +581,15 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 0.18rem 0.4rem 0.18rem 0.55rem;
-      background: var(--surface);
+      background: #ffffff;
       color: var(--text);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
     }
     .flex-chip-remove {
-      border: 1px solid var(--border);
-      background: #1b1b20;
+      border: 1px solid #bfd3e5;
+      background: #f5f9ff;
       color: var(--textMuted);
       border-radius: 999px;
       width: 18px;
@@ -508,6 +599,26 @@
       font-size: 0.8rem;
       padding: 0;
     }
+    @media (max-width: 760px) {
+      .hero {
+        padding-bottom: 2.7rem;
+      }
+      .hero-title {
+        font-size: 1.55rem;
+      }
+      .search-panel {
+        margin-top: -1.7rem;
+      }
+      .actions {
+        width: 100%;
+      }
+      .actions .btn {
+        flex: 1 1 180px;
+      }
+      .regular-calendar-dual {
+        grid-template-columns: 1fr;
+      }
+    }
     @media (max-width: 600px) {
       .card { grid-template-columns: 1fr; }
       .card-price { order: -1; }
@@ -516,20 +627,22 @@
 </head>
 <body>
   <div class="container">
-    <h1>Booking Car Scout</h1>
-    <p class="subtitle">Поиск выгодной аренды авто в Барселоне</p>
+    <div class="hero">
+      <h1 class="hero-title">Booking Car Scout</h1>
+      <p class="hero-subtitle">Поиск выгодной аренды авто в Барселоне</p>
+    </div>
 
-    <div class="panel">
+    <div class="panel search-panel">
       <h2>Параметры поиска</h2>
       <div class="mode-switch">
         <button type="button" id="modeRegularBtn" class="mode-btn active">Обычный поиск</button>
         <button type="button" id="modeFlexBtn" class="mode-btn">Гибкий поиск</button>
       </div>
-      <div class="field">
-        <label for="rentDays">Длительность аренды (дней)</label>
-        <input type="number" id="rentDays" min="1" max="7" step="1" value="2" />
-      </div>
-      <div class="form-row">
+      <div class="form-row search-top-row">
+        <div class="field field-days">
+          <label for="rentDays">Длительность аренды (дней)</label>
+          <input type="number" id="rentDays" min="1" max="7" step="1" value="2" />
+        </div>
         <div class="field" id="startDateField">
           <label for="startDate">Дата начала</label>
           <input type="date" id="startDate" />
@@ -538,18 +651,42 @@
           <label for="endDate">Дата конца</label>
           <input type="date" id="endDate" />
         </div>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
+          <button type="button" class="btn btn-secondary" id="loadBtn">Загрузить последние результаты</button>
+          <span class="status" id="status"></span>
+        </div>
+      </div>
+      <div class="form-row search-meta-row">
         <div id="regularCalendarBlock" class="regular-calendar-block">
-          <div class="regular-calendar-head">
-            <button type="button" class="flex-cal-nav" id="regularPrevMonthBtn">◀</button>
-            <div class="regular-calendar-title" id="regularMonthTitle"></div>
-            <button type="button" class="flex-cal-nav" id="regularNextMonthBtn">▶</button>
-          </div>
-          <div class="regular-calendar-help">Клик 1: выбрать дату начала. Клик 2: выбрать дату конца (в пределах окна).</div>
+          <div class="regular-calendar-help">Выбери дату старта в левом календаре и дату конца аренды в правом (в пределах окна).</div>
           <div id="regularSelectedInfo" class="regular-selected-info"></div>
-          <div class="flex-calendar-weekdays">
-            <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+          <div class="regular-calendar-dual">
+            <div class="regular-calendar-card">
+              <div class="regular-calendar-label">Начало аренды</div>
+              <div class="regular-calendar-head">
+                <button type="button" class="flex-cal-nav" id="regularStartPrevMonthBtn">◀</button>
+                <div class="regular-calendar-title" id="regularStartMonthTitle"></div>
+                <button type="button" class="flex-cal-nav" id="regularStartNextMonthBtn">▶</button>
+              </div>
+              <div class="flex-calendar-weekdays">
+                <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+              </div>
+              <div id="regularStartCalendarGrid" class="regular-calendar-grid"></div>
+            </div>
+            <div class="regular-calendar-card">
+              <div class="regular-calendar-label">Конец аренды</div>
+              <div class="regular-calendar-head">
+                <button type="button" class="flex-cal-nav" id="regularEndPrevMonthBtn">◀</button>
+                <div class="regular-calendar-title" id="regularEndMonthTitle"></div>
+                <button type="button" class="flex-cal-nav" id="regularEndNextMonthBtn">▶</button>
+              </div>
+              <div class="flex-calendar-weekdays">
+                <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+              </div>
+              <div id="regularEndCalendarGrid" class="regular-calendar-grid"></div>
+            </div>
           </div>
-          <div id="regularCalendarGrid" class="regular-calendar-grid"></div>
         </div>
         <div id="flexCalendarBlock" class="flex-calendar-block">
           <div class="flex-calendar-head">
@@ -578,11 +715,8 @@
           <div id="flexCalendarGrid" class="flex-calendar-grid"></div>
           <div id="flexSelectedWindows" class="flex-selected"></div>
         </div>
-        <div class="actions">
-          <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
-          <button type="button" class="btn btn-secondary" id="loadBtn">Загрузить последние результаты</button>
-          <span class="status" id="status"></span>
-        </div>
+      </div>
+      <div class="form-row search-meta-row">
         <div id="progressBlock" class="progress">
           <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
           <div id="progressMeta" class="progress-meta"></div>
@@ -646,11 +780,15 @@
     const startDateField = document.getElementById("startDateField");
     const endDateField = document.getElementById("endDateField");
     const regularCalendarBlock = document.getElementById("regularCalendarBlock");
-    const regularMonthTitle = document.getElementById("regularMonthTitle");
-    const regularCalendarGrid = document.getElementById("regularCalendarGrid");
+    const regularStartMonthTitle = document.getElementById("regularStartMonthTitle");
+    const regularStartCalendarGrid = document.getElementById("regularStartCalendarGrid");
+    const regularEndMonthTitle = document.getElementById("regularEndMonthTitle");
+    const regularEndCalendarGrid = document.getElementById("regularEndCalendarGrid");
     const regularSelectedInfo = document.getElementById("regularSelectedInfo");
-    const regularPrevMonthBtn = document.getElementById("regularPrevMonthBtn");
-    const regularNextMonthBtn = document.getElementById("regularNextMonthBtn");
+    const regularStartPrevMonthBtn = document.getElementById("regularStartPrevMonthBtn");
+    const regularStartNextMonthBtn = document.getElementById("regularStartNextMonthBtn");
+    const regularEndPrevMonthBtn = document.getElementById("regularEndPrevMonthBtn");
+    const regularEndNextMonthBtn = document.getElementById("regularEndNextMonthBtn");
     const modeRegularBtn = document.getElementById("modeRegularBtn");
     const modeFlexBtn = document.getElementById("modeFlexBtn");
     const flexCalendarBlock = document.getElementById("flexCalendarBlock");
@@ -685,13 +823,18 @@
       d.setHours(0, 0, 0, 0);
       return d;
     })();
-    let regularViewMonth = (() => {
+    let regularStartViewMonth = (() => {
       const d = new Date();
       d.setDate(1);
       d.setHours(0, 0, 0, 0);
       return d;
     })();
-    let regularAwaitingEndPick = false;
+    let regularEndViewMonth = (() => {
+      const d = new Date();
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    })();
     let lastProgressPercent = null;
     let lastProgressPhraseIndex = -1;
     const PROGRESS_PHRASES = [
@@ -950,17 +1093,20 @@
       const end = new Date(d);
       end.setDate(end.getDate() + rentDays);
       endDateEl.value = toLocalDateString(end);
+      regularStartViewMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      regularEndViewMonth = new Date(end.getFullYear(), end.getMonth(), 1);
       updateEndDateLimits();
     }
     function updateEndDateLimits() {
       const start = startDateEl.value;
       if (!start) return;
       const startD = dateFromISO(start);
+      const rentDays = getRentDaysForCalculations();
       const minEnd = new Date(startD);
-      minEnd.setDate(minEnd.getDate());
+      minEnd.setDate(minEnd.getDate() + rentDays);
       endDateEl.min = toLocalDateString(minEnd);
       const maxEnd = new Date(startD);
-      maxEnd.setDate(maxEnd.getDate() + MAX_WINDOW_DAYS - 1);
+      maxEnd.setDate(maxEnd.getDate() + MAX_WINDOW_DAYS);
       endDateEl.max = toLocalDateString(maxEnd);
       const end = endDateEl.value;
       if (!end || end < endDateEl.min) {
@@ -970,83 +1116,114 @@
         endDateEl.value = endDateEl.max;
       }
     }
-    function renderRegularCalendar() {
-      const year = regularViewMonth.getFullYear();
-      const month = regularViewMonth.getMonth();
-      const monthLabel = regularViewMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-      regularMonthTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+    function syncEndDateToCurrentMinimum() {
+      if (!startDateEl.value) return;
+      updateEndDateLimits();
+      endDateEl.value = endDateEl.min;
+      if (endDateEl.min) {
+        const minEndDate = dateFromISO(endDateEl.min);
+        regularEndViewMonth = new Date(minEndDate.getFullYear(), minEndDate.getMonth(), 1);
+      }
+    }
+    function formatMonthTitle(dateObj) {
+      const monthLabel = dateObj.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      return monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+    }
+    function buildRegularMonthCells(viewMonth, selectedIso, extrasFn) {
+      const year = viewMonth.getFullYear();
+      const month = viewMonth.getMonth();
       const firstDay = new Date(year, month, 1);
       const offset = (firstDay.getDay() + 6) % 7;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayIso = toLocalDateString(today);
-      const startIso = startDateEl.value || "";
-      const endIso = endDateEl.value || "";
-      const candidateMaxIso = startIso ? addDays(startIso, MAX_WINDOW_DAYS - 1) : "";
-      regularSelectedInfo.textContent = startIso && endIso
-        ? `Выбрано: ${startIso} → ${endIso}`
-        : startIso
-          ? `Выбрано: ${startIso} → ...`
-          : "Выбрано: —";
       const cells = [];
       for (let i = 0; i < offset; i++) cells.push({ empty: true });
       for (let day = 1; day <= daysInMonth; day++) {
         const iso = toLocalDateString(new Date(year, month, day));
         const isPast = iso < todayIso;
-        const isStart = iso === startIso;
-        const isEnd = iso === endIso;
-        const inRange = startIso && endIso && iso > startIso && iso < endIso;
-        const candidate = regularAwaitingEndPick && startIso && iso >= startIso && iso <= candidateMaxIso;
-        cells.push({ iso, day, isPast, isStart, isEnd, inRange, candidate });
+        const extras = extrasFn ? extrasFn(iso) : {};
+        cells.push({ iso, day, isPast, isSelected: iso === selectedIso, ...extras });
       }
       while (cells.length % 7 !== 0) cells.push({ empty: true });
-      regularCalendarGrid.innerHTML = cells.map((c) => {
+      return cells;
+    }
+    function renderRegularGrid(gridEl, cells, onPick) {
+      gridEl.innerHTML = cells.map((c) => {
         if (c.empty) return `<button type="button" class="regular-day muted" disabled></button>`;
-        return `<button type="button" class="regular-day${c.isPast ? " past" : ""}${c.isStart ? " start" : ""}${c.isEnd ? " end" : ""}${c.inRange ? " in-range" : ""}${c.candidate && !c.isStart ? " candidate" : ""}" data-date="${escapeHtml(c.iso)}"${c.isPast ? " disabled" : ""}>${c.day}</button>`;
+        const cls = [
+          "regular-day",
+          c.isPast ? "past" : "",
+          c.isSelected && !c.isEnd ? "start" : "",
+          c.isEnd ? "end" : "",
+          c.inRange ? "in-range" : "",
+          c.candidate ? "candidate" : "",
+          c.isUnavailable ? "unavailable" : "",
+        ].filter(Boolean).join(" ");
+        const disabled = c.isPast || c.isUnavailable || c.isDisabled;
+        return `<button type="button" class="${cls}" data-date="${escapeHtml(c.iso)}"${disabled ? " disabled" : ""}>${c.day}</button>`;
       }).join("");
-      regularCalendarGrid.querySelectorAll(".regular-day[data-date]").forEach((btn) => {
+      gridEl.querySelectorAll(".regular-day[data-date]").forEach((btn) => {
         btn.addEventListener("click", () => {
           if (btn.disabled) return;
-          const iso = btn.dataset.date;
-          const sameAsStart = iso === startDateEl.value;
-          if (sameAsStart) {
-            startDateEl.value = "";
-            endDateEl.value = "";
-            regularAwaitingEndPick = false;
-            setStatus("");
-            renderRegularCalendar();
-            return;
-          }
-          if (!startDateEl.value || !regularAwaitingEndPick) {
-            startDateEl.value = iso;
-            updateEndDateLimits();
-            endDateEl.value = iso;
-            regularAwaitingEndPick = true;
-            renderRegularCalendar();
-            return;
-          }
-          if (iso < startDateEl.value || iso > addDays(startDateEl.value, MAX_WINDOW_DAYS - 1)) {
-            setStatus(`Дата конца должна быть в диапазоне ${endDateEl.min} — ${endDateEl.max}.`, "error");
-            return;
-          }
-          endDateEl.value = iso;
-          regularAwaitingEndPick = false;
-          setStatus("");
-          renderRegularCalendar();
+          onPick(btn.dataset.date);
         });
+      });
+    }
+    function renderRegularCalendar() {
+      const startIso = startDateEl.value || "";
+      const endIso = endDateEl.value || "";
+      regularSelectedInfo.textContent = startIso && endIso
+        ? `Выбрано: ${startIso} → ${endIso}`
+        : startIso || endIso
+          ? `Выбрано: ${startIso || "—"} → ${endIso || "—"}`
+          : "Выбрано: —";
+      regularStartMonthTitle.textContent = formatMonthTitle(regularStartViewMonth);
+      regularEndMonthTitle.textContent = formatMonthTitle(regularEndViewMonth);
+      const startCells = buildRegularMonthCells(regularStartViewMonth, startIso, () => {
+        return { inRange: false, isEnd: false, candidate: false, isUnavailable: false };
+      });
+      const endCells = buildRegularMonthCells(regularEndViewMonth, endIso, (iso) => {
+        if (!startIso) return { isEnd: false, candidate: false, isUnavailable: true };
+        const minIso = endDateEl.min || addDays(startIso, getRentDaysForCalculations());
+        const maxIso = addDays(startIso, MAX_WINDOW_DAYS);
+        const rawUnavailable = iso < minIso || iso > maxIso;
+        const isSelectedEnd = iso === endIso;
+        const inRange = startIso && endIso && iso > startIso && iso < endIso;
+        const isUnavailable = rawUnavailable && !inRange;
+        return { isEnd: isSelectedEnd, candidate: !rawUnavailable && !isSelectedEnd && !inRange, isUnavailable, inRange, isDisabled: rawUnavailable };
+      });
+      renderRegularGrid(regularStartCalendarGrid, startCells, (iso) => {
+        startDateEl.value = iso;
+        syncEndDateToCurrentMinimum();
+        setStatus("");
+        renderRegularCalendar();
+      });
+      renderRegularGrid(regularEndCalendarGrid, endCells, (iso) => {
+        if (!startDateEl.value) {
+          setStatus("Сначала выбери дату начала.", "error");
+          return;
+        }
+        if (iso < endDateEl.min || iso > endDateEl.max) {
+          setStatus(`Дата конца должна быть в диапазоне ${endDateEl.min} — ${endDateEl.max}.`, "error");
+          return;
+        }
+        endDateEl.value = iso;
+        setStatus("");
+        renderRegularCalendar();
       });
     }
     setDefaultDates();
     fillFlexTimeOptions();
     renderRegularCalendar();
     startDateEl.addEventListener("change", () => {
-      updateEndDateLimits();
+      syncEndDateToCurrentMinimum();
       renderRegularCalendar();
     });
     endDateEl.addEventListener("change", renderRegularCalendar);
     rentDaysEl.addEventListener("input", () => {
-      updateEndDateLimits();
+      syncEndDateToCurrentMinimum();
       renderRegularCalendar();
       if (searchMode === "flex") {
         renderFlexCalendar();
@@ -1055,7 +1232,7 @@
     });
     rentDaysEl.addEventListener("change", () => {
       normalizeRentDaysInput();
-      updateEndDateLimits();
+      syncEndDateToCurrentMinimum();
       renderRegularCalendar();
       if (searchMode === "flex") {
         renderFlexCalendar();
@@ -1064,19 +1241,27 @@
     });
     rentDaysEl.addEventListener("blur", () => {
       normalizeRentDaysInput();
-      updateEndDateLimits();
+      syncEndDateToCurrentMinimum();
       renderRegularCalendar();
       if (searchMode === "flex") {
         renderFlexCalendar();
         renderFlexSelectedWindows();
       }
     });
-    regularPrevMonthBtn.addEventListener("click", () => {
-      regularViewMonth = new Date(regularViewMonth.getFullYear(), regularViewMonth.getMonth() - 1, 1);
+    regularStartPrevMonthBtn.addEventListener("click", () => {
+      regularStartViewMonth = new Date(regularStartViewMonth.getFullYear(), regularStartViewMonth.getMonth() - 1, 1);
       renderRegularCalendar();
     });
-    regularNextMonthBtn.addEventListener("click", () => {
-      regularViewMonth = new Date(regularViewMonth.getFullYear(), regularViewMonth.getMonth() + 1, 1);
+    regularStartNextMonthBtn.addEventListener("click", () => {
+      regularStartViewMonth = new Date(regularStartViewMonth.getFullYear(), regularStartViewMonth.getMonth() + 1, 1);
+      renderRegularCalendar();
+    });
+    regularEndPrevMonthBtn.addEventListener("click", () => {
+      regularEndViewMonth = new Date(regularEndViewMonth.getFullYear(), regularEndViewMonth.getMonth() - 1, 1);
+      renderRegularCalendar();
+    });
+    regularEndNextMonthBtn.addEventListener("click", () => {
+      regularEndViewMonth = new Date(regularEndViewMonth.getFullYear(), regularEndViewMonth.getMonth() + 1, 1);
       renderRegularCalendar();
     });
     modeRegularBtn.addEventListener("click", () => setSearchMode("regular"));
@@ -1313,8 +1498,10 @@
         analysisBlock.style.display = "block";
         const gm = analysis.globalMin;
         const timeStr = gm.time != null ? String(gm.time) + ":00" : "";
+        const rentDaysForAnalysis = searchMode === "flex" ? getEffectiveFlexRentDays() : getRentDaysForCalculations();
         analysisBlock.innerHTML = `
           <h3>Анализ</h3>
+          <p><strong>Срок аренды:</strong> <strong><span class="price">${escapeHtml(String(rentDaysForAnalysis))}</span> дн.</strong></p>
           <p><button type="button" class="analysis-link" id="jumpToCheapestBtn">Самое дешёвое окно:</button> ${escapeHtml(gm.pickup)} → ${escapeHtml(gm.dropoff)} → ${escapeHtml(timeStr)} — <span class="price">${escapeHtml(gm.priceText)}</span> — ${escapeHtml(gm.location)} — ${escapeHtml(gm.supplier)}</p>
         `;
         const jumpBtn = document.getElementById("jumpToCheapestBtn");
@@ -1397,9 +1584,9 @@
           setStatus("Укажите дату начала и дату конца.", "error");
           return;
         }
-        const horizon = searchWindowsCount(startDate, endDate);
-        if (horizon < 1 || horizon > MAX_WINDOW_DAYS) {
-          setStatus("Количество окон поиска: от 1 до " + MAX_WINDOW_DAYS + ".", "error");
+        const spanDays = daysBetween(startDate, endDate);
+        if (spanDays < rentDays || spanDays > MAX_WINDOW_DAYS) {
+          setStatus("Интервал между датами: от " + rentDays + " до " + MAX_WINDOW_DAYS + " дней.", "error");
           return;
         }
       }
