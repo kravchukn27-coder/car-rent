@@ -1,6 +1,6 @@
 {
   "name": "booking-car-scout",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Booking.com car rental price scanner",
   "main": "set_location.js",
   "type": "commonjs",
