@@ -27,6 +27,14 @@
           Выберите период аренды в календаре (от 1 до 7 дней).
         </p>
 
+        <div class="flex-presets flex-only" id="flexPresetsWrap">
+          <span class="flex-presets-label">Быстрый выбор:</span>
+          <div class="flex-presets-buttons">
+            <button type="button" class="flex-preset-btn" id="presetWeekendsMonth" data-preset="weekends-month">Выходные месяца</button>
+            <button type="button" class="flex-preset-btn" id="presetFriWeekends" data-preset="fri-weekends">Пятница + выходные</button>
+          </div>
+        </div>
+
         <div class="calendar-wrap">
           <div class="calendar-head">
             <button type="button" class="cal-nav" id="prevMonthBtn" aria-label="Предыдущий месяц">←</button>
@@ -74,7 +82,7 @@
           <button type="button" class="btn btn-primary" id="runBtn">Запустить поиск</button>
           <button type="button" class="btn btn-secondary" id="loadBtn">Показать последний результат</button>
         </div>
-        <p class="status" id="status"></p>
+        <p class="status status-hidden" id="status" aria-live="polite"></p>
 
         <div id="progressBlock" class="progress" hidden>
           <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
@@ -160,6 +168,8 @@
       const flexTimeList = document.getElementById("flexTimeList");
 
       let searchMode = "regular";
+      let flexPresetDates = null;
+      let activePresetId = null;
       let flexSelectedTimes = new Set([10, 16]);
       let rangeStart = null;
       let rangeEnd = null;
@@ -218,14 +228,24 @@
         modeRegularBtn.classList.toggle("active", !isFlex);
         modeFlexBtn.classList.toggle("active", isFlex);
         flexTimesWrap.classList.toggle("hidden", !isFlex);
+        document.getElementById("flexPresetsWrap").classList.toggle("hidden", !isFlex);
+        if (!isFlex) {
+          flexPresetDates = null;
+          activePresetId = null;
+        }
         calendarHint.textContent = isFlex
-          ? "Выберите диапазон дат: будут проверены все дни в этом периоде (до 6 дней)."
+          ? "Выберите диапазон дат или нажмите пресет: будут проверены выбранные дни (до 6)."
           : "Выберите период аренды в календаре (от 1 до 7 дней).";
         updateSelectedText();
+        updatePresetButtonsActive();
         renderCalendar();
       }
 
       function updateSelectedText() {
+        if (searchMode === "flex" && flexPresetDates && flexPresetDates.length > 0) {
+          selectedRangeText.textContent = "Выбрано: " + flexPresetDates.length + " дн. (пресет)";
+          return;
+        }
         if (!rangeStart && !rangeEnd) {
           selectedRangeText.textContent = "Не выбрано";
           return;
@@ -245,6 +265,82 @@
       function getRentDays() {
         const v = parseInt(rentDaysEl.value, 10);
         return Number.isFinite(v) ? Math.min(MAX_RENT_DAYS, Math.max(MIN_RENT_DAYS, v)) : MIN_RENT_DAYS;
+      }
+
+      function getPresetDatesWeekendsMonth() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayIso = toLocalDateString(today);
+        const out = [];
+        for (let monthOffset = 0; monthOffset <= 1 && out.length < FLEX_MAX_DATES; monthOffset++) {
+          const d = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + monthOffset, 1);
+          const y = d.getFullYear();
+          const m = d.getMonth();
+          const daysInMonth = new Date(y, m + 1, 0).getDate();
+          for (let day = 1; day <= daysInMonth && out.length < FLEX_MAX_DATES; day++) {
+            const cell = new Date(y, m, day);
+            const iso = toLocalDateString(cell);
+            if (iso < todayIso) continue;
+            const w = cell.getDay();
+            if (w === 6 || w === 0) out.push(iso);
+          }
+        }
+        return out;
+      }
+      function getPresetDatesFriWeekends() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayIso = toLocalDateString(today);
+        const out = [];
+        for (let monthOffset = 0; monthOffset <= 1 && out.length < FLEX_MAX_DATES; monthOffset++) {
+          const d = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + monthOffset, 1);
+          const y = d.getFullYear();
+          const m = d.getMonth();
+          const daysInMonth = new Date(y, m + 1, 0).getDate();
+          for (let day = 1; day <= daysInMonth && out.length < FLEX_MAX_DATES; day++) {
+            const cell = new Date(y, m, day);
+            const iso = toLocalDateString(cell);
+            if (iso < todayIso) continue;
+            const w = cell.getDay();
+            if (w === 5 || w === 6 || w === 0) out.push(iso);
+          }
+        }
+        return out;
+      }
+      function applyPreset(presetId) {
+        if (activePresetId === presetId) {
+          flexPresetDates = null;
+          activePresetId = null;
+          setStatus("");
+          updatePresetButtonsActive();
+          updateSelectedText();
+          renderCalendar();
+          return;
+        }
+        let dates = [];
+        if (presetId === "weekends-month") dates = getPresetDatesWeekendsMonth();
+        else if (presetId === "fri-weekends") dates = getPresetDatesFriWeekends();
+        if (dates.length === 0) {
+          setStatus("В выбранном месяце нет подходящих дат для этого пресета.", "error");
+          return;
+        }
+        flexPresetDates = dates.slice(0, FLEX_MAX_DATES);
+        activePresetId = presetId;
+        rangeStart = null;
+        rangeEnd = null;
+        setStatus("");
+        updatePresetButtonsActive();
+        updateSelectedText();
+        renderCalendar();
+      }
+      function updatePresetButtonsActive() {
+        document.querySelectorAll(".flex-preset-btn").forEach(function(btn) {
+          btn.classList.toggle("active", btn.dataset.preset === activePresetId);
+        });
+      }
+      function getPickupDatesForFlex() {
+        if (flexPresetDates && flexPresetDates.length > 0) return flexPresetDates.slice(0, FLEX_MAX_DATES);
+        return rangeToPickupDates();
       }
 
       function fillFlexTimeOptions() {
@@ -302,6 +398,7 @@
           const firstDay = new Date(y, m, 1);
           const offset = (firstDay.getDay() + 6) % 7;
           const daysInMonth = new Date(y, m + 1, 0).getDate();
+          const presetSet = (searchMode === "flex" && flexPresetDates && flexPresetDates.length > 0) ? new Set(flexPresetDates) : null;
           const cells = [];
           for (let i = 0; i < offset; i++) cells.push({ empty: true });
           for (let day = 1; day <= daysInMonth; day++) {
@@ -316,7 +413,8 @@
             } else if (rangeStart && iso === rangeStart) {
               isStart = true;
             }
-            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange });
+            const isPresetSelected = presetSet && presetSet.has(iso);
+            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange, isPresetSelected });
           }
           while (cells.length % 7 !== 0) cells.push({ empty: true });
           return cells;
@@ -327,10 +425,11 @@
             if (c.empty) return '<button type="button" class="cal-day empty" disabled></button>';
             const classes = ["cal-day"];
             if (c.isPast) classes.push("past");
-            if (c.isToday && !c.isStart && !c.isEnd && !c.inRange) classes.push("today");
+            if (c.isToday && !c.isStart && !c.isEnd && !c.inRange && !c.isPresetSelected) classes.push("today");
             if (c.isStart) classes.push("start");
             if (c.isEnd) classes.push("end");
             if (c.inRange) classes.push("range");
+            if (c.isPresetSelected) classes.push("preset");
             return '<button type="button" class="' + classes.join(" ") + '" data-date="' + escapeHtml(c.iso) + '"' + (c.isPast ? " disabled" : "") + '>' + c.day + '</button>';
           }).join("");
         }
@@ -340,6 +439,11 @@
             btn.addEventListener("click", function() {
               const iso = btn.dataset.date;
               if (btn.disabled) return;
+              if (searchMode === "flex") {
+                flexPresetDates = null;
+                activePresetId = null;
+                updatePresetButtonsActive();
+              }
               if (!rangeStart || (rangeStart && rangeEnd)) {
                 rangeStart = iso;
                 rangeEnd = null;
@@ -412,6 +516,9 @@
       fillFlexTimeOptions();
       setMode("regular");
       renderCalendar();
+      document.querySelectorAll(".flex-preset-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() { applyPreset(btn.dataset.preset); });
+      });
 
       function getValidatedFlexTimes() {
         const times = Array.from(flexSelectedTimes).filter(function(v) { return Number.isFinite(v) && v >= FLEX_MIN_HOUR && v <= FLEX_MAX_HOUR; }).sort(function(a, b) { return a - b; });
@@ -447,8 +554,8 @@
       }
       function showProgress() {
         progressBlock.hidden = false;
-        progressFill.style.width = "0%";
-        progressMeta.textContent = "Подготовка…";
+        progressFill.style.width = "5%";
+        progressMeta.textContent = "Прогресс: 5%";
         progressPhrase.textContent = "";
         lastProgressPercent = null;
         captchaNotice.hidden = true;
@@ -468,10 +575,11 @@
         fetch("/api/progress").then(function(r) { return r.ok ? r.json() : null; }).then(function(p) {
           if (!p) return;
           const percent = Math.min(100, Math.max(0, p.percent || 0));
-          progressFill.style.width = percent + "%";
+          const displayPercent = percent === 0 ? 5 : percent;
+          progressFill.style.width = displayPercent + "%";
           progressBlock.querySelector("[role=progressbar]").setAttribute("aria-valuenow", percent);
           const eta = p.etaSec && p.etaSec > 0 ? Math.ceil(p.etaSec / 60) : null;
-          progressMeta.textContent = eta ? "Прогресс: " + percent + "%, осталось ~" + eta + " мин" : "Прогресс: " + percent + "%";
+          progressMeta.textContent = eta ? "Прогресс: " + displayPercent + "%, осталось ~" + eta + " мин" : "Прогресс: " + displayPercent + "%";
           if (lastProgressPercent !== percent) {
             progressPhrase.textContent = getRandomPhrase();
             lastProgressPercent = percent;
@@ -607,11 +715,25 @@
         if (analysis && analysis.globalMin) {
           analysisBlock.hidden = false;
           const gm = analysis.globalMin;
-          const timeStr = (gm.time != null ? String(gm.time) + ":00" : "");
+          const timeStr = gm.time != null ? String(gm.time).padStart(2, "0") + ":00" : "";
           const rentDaysForAnalysis = searchMode === "flex" ? getRentDays() : getRentDays();
-          analysisBlock.innerHTML = '<h3>Анализ</h3><p><strong>Срок аренды:</strong> ' + rentDaysForAnalysis + ' дн.</p>' +
-            '<p><button type="button" class="analysis-link" id="jumpToCheapestBtn">Самое дешёвое:</button> ' +
-            escapeHtml(gm.pickup) + " – " + escapeHtml(gm.dropoff) + " " + escapeHtml(timeStr) + " — " + escapeHtml(gm.priceText) + " — " + escapeHtml(gm.location) + ", " + escapeHtml(gm.supplier) + "</p>";
+          const dateRange = formatDisplayDate(gm.pickup) + " – " + formatDisplayDate(gm.dropoff);
+          analysisBlock.innerHTML =
+            '<div class="analysis-header">' +
+              '<h3 class="analysis-title">Анализ</h3>' +
+              '<span class="analysis-rent-days">Срок аренды: ' + rentDaysForAnalysis + ' дн.</span>' +
+            '</div>' +
+            '<button type="button" class="analysis-card" id="jumpToCheapestBtn">' +
+              '<div class="analysis-card-label">Самое дешёвое предложение</div>' +
+              '<div class="analysis-card-price">' + escapeHtml(gm.priceText) + '</div>' +
+              '<div class="analysis-card-details">' +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Даты</span> ' + escapeHtml(dateRange) + '</span>' +
+                (timeStr ? '<span class="analysis-detail"><span class="analysis-detail-label">Время</span> ' + escapeHtml(timeStr) + '</span>' : '') +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Локация</span> ' + escapeHtml(gm.location) + '</span>' +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Прокатчик</span> ' + escapeHtml(gm.supplier) + '</span>' +
+              '</div>' +
+              '<span class="analysis-card-hint">Нажмите, чтобы перейти к варианту в списке</span>' +
+            '</button>';
           var jumpBtn = document.getElementById("jumpToCheapestBtn");
           if (jumpBtn) jumpBtn.addEventListener("click", function() {
             var targetWindowKey = gm.pickup + "|" + gm.dropoff;
@@ -656,7 +778,7 @@
         let startDate = null, endDate = null, pickupDates = null;
 
         if (isFlex) {
-          pickupDates = rangeToPickupDates();
+          pickupDates = getPickupDatesForFlex();
           if (pickupDates.length === 0) {
             setStatus("Выберите диапазон дат в календаре.", "error");
             return;
@@ -683,7 +805,7 @@
 
         runBtn.disabled = true;
         showProgress();
-        setStatus("Запуск поиска…", "loading");
+        setStatus("");
         stopProgressPolling();
         progressTimer = setInterval(pollProgress, 1500);
 
@@ -713,7 +835,7 @@
           .then(function(results) {
             window.lastResults = results;
             showResults(results);
-            setStatus("Готово.");
+            setStatus("");
           })
           .catch(function(e) {
             stopProgressPolling();
