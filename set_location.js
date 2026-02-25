@@ -1,6 +1,7 @@
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const readline = require("readline");
 
 // ======================
@@ -555,13 +556,47 @@ function onCancel() {
 process.on("SIGTERM", onCancel);
 process.on("SIGINT", onCancel);
 
-async function launchScoutContext(userDataDir, runMode) {
-  const context = await chromium.launchPersistentContext(userDataDir, {
+const BROWSER_LAUNCH_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--disable-software-rasterizer",
+  "--disable-extensions",
+];
+
+/** Путь к Google Chrome на macOS — при запуске из UI дочерний процесс может не находить Chrome по channel. */
+function getChromeExecutablePath() {
+  if (process.platform !== "darwin") return null;
+  const candidates = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    path.join(process.env.HOME || "", "Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch (_) {}
+  }
+  return null;
+}
+
+async function launchScoutContext(userDataDir, runMode, useChrome = false) {
+  const options = {
     headless: false,
     slowMo: 150,
     viewport: { width: 1280, height: 800 },
     locale: "en-GB",
-  });
+    args: BROWSER_LAUNCH_ARGS,
+  };
+  if (useChrome) {
+    const chromePath = getChromeExecutablePath();
+    if (chromePath) {
+      options.executablePath = chromePath;
+    } else {
+      options.channel = "chrome";
+    }
+  }
+  const context = await chromium.launchPersistentContext(userDataDir, options);
   emitScoutEvent("RUN_MODE", { mode: "headed" });
   return context;
 }
@@ -589,13 +624,34 @@ async function launchScoutContext(userDataDir, runMode) {
   const currentRunMode = "headed";
 
   let context;
+  // 1) Пытаемся запустить через системный Google Chrome.
   try {
-    context = await launchScoutContext(userDataDir, currentRunMode);
-  } catch (launchErr) {
-    const msg = launchErr && launchErr.message ? launchErr.message : String(launchErr);
-    console.error("BROWSER_LAUNCH_FAILED: " + msg);
-    console.error("Подсказка: закройте окно браузера от предыдущего поиска или запустите поиск из терминала: npm run dev");
-    process.exit(1);
+    context = await launchScoutContext(userDataDir, currentRunMode, true);
+  } catch (chromeErr) {
+    const msg = chromeErr && chromeErr.message ? chromeErr.message : String(chromeErr);
+    console.error("Запуск через Chrome не удался: " + msg);
+    // 2) Фолбэк на Chromium с тем же профилем.
+    try {
+      context = await launchScoutContext(userDataDir, currentRunMode, false);
+    } catch (launchErr) {
+      const errMsg = launchErr && launchErr.message ? launchErr.message : String(launchErr);
+      console.error("BROWSER_LAUNCH_FAILED: " + errMsg);
+      // 3) Последняя попытка — временный профиль.
+      const fallbackDir = path.join(os.tmpdir(), "pw-profile-scout-" + Date.now());
+      try {
+        console.error("Повторный запуск с временным профилем (Chromium)...");
+        context = await launchScoutContext(fallbackDir, currentRunMode, false);
+      } catch (retryErr) {
+        const retryMsg = retryErr && retryErr.message ? retryErr.message : String(retryErr);
+        console.error("Повторный запуск не удался: " + retryMsg);
+        console.error("");
+        console.error("Подсказки:");
+        console.error("  1. Установите Google Chrome — скрипт будет использовать его вместо Chromium.");
+        console.error("  2. Удалите папки профиля: rm -rf .pw-profile .pw-profile-ui");
+        console.error("  3. Переустановите браузеры Playwright: npm run install-browsers");
+        process.exit(1);
+      }
+    }
   }
 
   scoutBrowserContext = context;

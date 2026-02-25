@@ -130,6 +130,10 @@ app.post("/api/run", async (req, res) => {
     lastEvent: null,
   };
   const env = { ...process.env, WINDOW_DAYS: String(horizon), RUN_FROM_UI: "1", PARALLEL_TABS: process.env.PARALLEL_TABS || "4" };
+  if (process.env.PATH) env.PATH = process.env.PATH;
+  if (process.platform === "darwin") {
+    env.PATH = (env.PATH || "") + ":/usr/local/bin:/opt/homebrew/bin";
+  }
   if (isFlex) {
     env.PICKUP_DATES = normalizedPickupDates.join(",");
     env.PICKUP_TIMES = (req.normalizedPickupTimes || []).join(",");
