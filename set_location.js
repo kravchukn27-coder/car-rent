@@ -47,16 +47,61 @@ const WANTED_PICKUP_LOCATIONS = [
   "Barcelona - Sants Train Station",
 ];
 
+function normalizeLocationText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u2010-\u2015]/g, "-")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Нормализует и мапит сырой текст локации из Booking к одному из целевых ключей. */
 function mapPickupLocation(raw) {
   if (!raw) return null;
-  const normalized = raw.replace(/\s+/g, " ").trim();
+  const normalized = normalizeLocationText(raw);
+
+  // Частые варианты в карточках Booking (в т.ч. локализованные подписи).
+  if (normalized.includes("sants")) return "Barcelona - Sants Train Station";
+  if (normalized.includes("eixample")) return "Barcelona - Centre Eixample";
+  if (normalized.includes("glories")) return "Barcelona - Plaza Glories";
+
   for (const key of WANTED_PICKUP_LOCATIONS) {
-    if (normalized === key) return key;
-    if (normalized.startsWith(key)) return key;
-    if (normalized.includes(key)) return key;
+    const keyNorm = normalizeLocationText(key);
+    if (normalized === keyNorm) return key;
+    if (normalized.startsWith(keyNorm)) return key;
+    if (normalized.includes(keyNorm)) return key;
   }
   return null;
+}
+
+/** Извлекает название поставщика независимо от языка интерфейса Booking. */
+async function extractSupplierName(card, cardText) {
+  // 1) Прямой матч по известным поставщикам в тексте карточки (самый стабильный путь).
+  for (const supplier of WANTED_SUPPLIERS) {
+    const re = new RegExp(`\\b${supplier}\\b`, "i");
+    if (re.test(String(cardText || ""))) return supplier;
+  }
+
+  // 2) Поиск подписи "Supplied by/Proporcionado por/..." в alt.
+  const prefixedAlt = await card
+    .locator('img[alt*="Supplied by"], img[alt*="Proporcionado por"], img[alt*="Suministrado por"]')
+    .first()
+    .getAttribute("alt", { timeout: CARD_READ_TIMEOUT_MS })
+    .catch(() => "");
+  const supplierFromAlt = String(prefixedAlt || "")
+    .replace(/^(Supplied by|Proporcionado por|Suministrado por)\s*/i, "")
+    .trim();
+  if (supplierFromAlt) return supplierFromAlt;
+
+  // 3) Фолбэк по тексту карточки (англ/исп).
+  const m = String(cardText || "").match(
+    /(Supplied by|Proporcionado por|Suministrado por)\s+([^\n|·]+)/i
+  );
+  if (m && m[2]) return m[2].trim();
+  return "";
 }
 
 // Базовый URL search-results (зафиксированный)
@@ -87,6 +132,7 @@ const MAX_PER_LOCATION = 1;
 // Сколько максимум ждать появления результатов (агрегация иногда 30–60 сек)
 const WAIT_FOR_RESULTS_MS = 60000;
 const NAVIGATION_TIMEOUT_MS = 25000;
+const CARD_READ_TIMEOUT_MS = 1200;
 
 // Параллельные вкладки: сколько окон обрабатывать одновременно (1 = поочерёдно, 3–4 ускоряет)
 const PARALLEL_TABS = Math.max(1, parseInt(process.env.PARALLEL_TABS || "4", 10));
@@ -142,7 +188,10 @@ function parseEuroPrice(text) {
 
 function extractEuroPricesFromText(text) {
   if (!text) return [];
-  const matches = text.match(/€\s*[\d.,]+/g) || [];
+  const matches = [
+    ...(text.match(/€\s*[\d.,]+/g) || []),
+    ...(text.match(/[\d.,]+\s*€/g) || []),
+  ];
   const values = [];
   for (const m of matches) {
     const v = parseEuroPrice(m);
@@ -483,26 +532,53 @@ async function runOneJob(page, pickupDate, dropoffDate, time, options = {}) {
   const toParse = Math.min(cardsCount, effectiveMaxCards);
   const pickupStr = toLocalDateString(pickupDate);
   const dropoffStr = toLocalDateString(dropoffDate);
+  const parseStats = {
+    toParse,
+    accepted: 0,
+    skippedNoEuro: 0,
+    skippedNoPrice: 0,
+    missingSupplier: 0,
+    skippedNoLocation: 0,
+    skippedSupplierFilter: 0,
+  };
 
   for (let i = 0; i < toParse; i++) {
     const card = cards.nth(i);
     try {
-      const cardText = await card.innerText().catch(() => "");
-      if (!/€\s*\d/.test(cardText)) continue;
-      const model = (await card.locator("h2").first().innerText().catch(() => "")).trim();
-      const supplierAlt = (await card.locator('img[alt^="Supplied by"]').first().getAttribute("alt").catch(() => "")) || "";
-      const supplier = supplierAlt.replace(/^Supplied by\s*/i, "").trim();
+      const cardExists = await card.count().catch(() => 0);
+      if (!cardExists) continue;
+      const cardText = await card.innerText({ timeout: CARD_READ_TIMEOUT_MS }).catch(() => "");
+      if (!(/€\s*\d/.test(cardText) || /\d\s*€/.test(cardText))) {
+        parseStats.skippedNoEuro += 1;
+        continue;
+      }
+      const model = (
+        await card.locator("h2").first().innerText({ timeout: CARD_READ_TIMEOUT_MS }).catch(() => "")
+      ).trim();
+      const supplierRaw = await extractSupplierName(card, cardText);
+      const supplier = supplierRaw || "Unknown supplier";
       // Локация: Booking может использовать разные символы дефиса и разные контейнеры,
       // поэтому берём первую строку с "Barcelona" из полного текста карточки.
-      const locationMatch = cardText.match(/Barcelona[^\n]+/);
+      const locationMatch = cardText.match(/barcelona[^\n]+/i);
       const location = locationMatch ? locationMatch[0].trim() : "";
       const euroValues = extractEuroPricesFromText(cardText);
-      if (!euroValues.length) continue;
+      if (!euroValues.length) {
+        parseStats.skippedNoPrice += 1;
+        continue;
+      }
       const priceValue = Math.min(...euroValues);
       const priceText = `€ ${priceValue}`;
-      const mappedLocation = mapPickupLocation(location);
-      if (!supplier || !mappedLocation) continue;
-      if (enforceSupplierFilter && WANTED_SUPPLIERS.length && !WANTED_SUPPLIERS.includes(supplier)) continue;
+      // Фолбэк: если строка "Barcelona ..." не найдена/не распознана, пробуем весь текст карточки.
+      const mappedLocation = mapPickupLocation(location) || mapPickupLocation(cardText);
+      if (!supplierRaw) parseStats.missingSupplier += 1;
+      if (!mappedLocation) {
+        parseStats.skippedNoLocation += 1;
+        continue;
+      }
+      if (enforceSupplierFilter && supplierRaw && WANTED_SUPPLIERS.length && !WANTED_SUPPLIERS.includes(supplierRaw)) {
+        parseStats.skippedSupplierFilter += 1;
+        continue;
+      }
       addToBucket({
         pickup: pickupStr,
         dropoff: dropoffStr,
@@ -514,6 +590,7 @@ async function runOneJob(page, pickupDate, dropoffDate, time, options = {}) {
         priceValue,
         searchUrl: buildSearchUrl(pickupDate, dropoffDate, time),
       });
+      parseStats.accepted += 1;
     } catch (_) {}
   }
 
@@ -522,6 +599,18 @@ async function runOneJob(page, pickupDate, dropoffDate, time, options = {}) {
     const bySupplier = buckets.get(loc) || new Map();
     const arr = Array.from(bySupplier.values()).sort((a, b) => a.priceValue - b.priceValue);
     for (const m of arr.slice(0, MAX_PER_LOCATION)) out.push(m);
+  }
+  if (out.length === 0 && toParse > 0) {
+    console.log(
+      "DEBUG_PARSE_ZERO:",
+      JSON.stringify({
+        pickup: pickupStr,
+        dropoff: dropoffStr,
+        time,
+        cardsCount,
+        parseStats,
+      })
+    );
   }
   return { matches: out, captchaRequired: false };
 }
@@ -606,6 +695,7 @@ async function launchScoutContext(userDataDir, runMode, useChrome = false) {
     slowMo: 150,
     viewport: { width: 1280, height: 800 },
     locale: "en-GB",
+    extraHTTPHeaders: { "Accept-Language": "en-GB,en;q=0.9" },
     args: BROWSER_LAUNCH_ARGS,
   };
   if (useChrome) {

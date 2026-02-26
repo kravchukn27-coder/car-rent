@@ -414,8 +414,8 @@
           let maxEndIso = null;
           if (hasPendingRegularRange) {
             const rentDays = getRentDays();
-            minEndIso = addDays(rangeStart, rentDays - 1);
-            maxEndIso = addDays(rangeStart, MAX_WINDOW_DAYS - 1);
+            minEndIso = addDays(rangeStart, rentDays);
+            maxEndIso = addDays(rangeStart, MAX_WINDOW_DAYS);
           }
           const cells = [];
           for (let i = 0; i < offset; i++) cells.push({ empty: true });
@@ -486,7 +486,7 @@
                   rangeStart = iso;
                   rangeEnd = null;
                 } else {
-                  const span = daysBetween(rangeStart, iso) + 1;
+                  const span = daysBetween(rangeStart, iso);
                   if (searchMode === "regular") {
                     if (span < getRentDays() || span > MAX_WINDOW_DAYS) {
                       setStatus("Период должен быть от " + getRentDays() + " до " + MAX_WINDOW_DAYS + " дней.", "error");
@@ -926,7 +926,7 @@
           }
           startDate = rangeStart;
           endDate = rangeEnd;
-          var span = daysBetween(startDate, endDate) + 1;
+          var span = daysBetween(startDate, endDate);
           if (span < rentDays || span > MAX_WINDOW_DAYS) {
             setStatus("Период в календаре: от " + rentDays + " до " + MAX_WINDOW_DAYS + " дней.", "error");
             return;
