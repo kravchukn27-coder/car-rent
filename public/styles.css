@@ -134,7 +134,7 @@ body {
 }
 .calendar-two-months {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 32px;
 }
 .calendar-month {
@@ -214,6 +214,14 @@ body {
   color: var(--text);
   font-weight: 600;
   border-radius: 0;
+}
+.cal-day.allowed-end {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.cal-day.blocked-end {
+  color: #cbd5e1;
+  cursor: not-allowed;
 }
 .cal-day.start,
 .cal-day.end {

@@ -11,11 +11,14 @@ const readline = require("readline");
 // Сколько дней вперёд проверяем (можно переопределить через process.env.WINDOW_DAYS)
 const WINDOW_DAYS = Math.max(1, parseInt(process.env.WINDOW_DAYS, 10) || 2);
 
-// Длительность аренды
+// Длительность аренды (базовое значение по умолчанию, может быть переопределено аргументами/из UI)
 const RENT_DAYS = 2;
 
-// Время выдачи/возврата
-const TIMES = [10, 16];
+// Время выдачи/возврата:
+// - в обычном режиме используется один фиксированный час (11:00)
+// - в гибком режиме список часов передаётся через PICKUP_TIMES и разбирается в resolveTimesFromEnv
+const TIMES = [11];
+const FIXED_HOUR = 11;
 
 function resolveTimesFromEnv() {
   const raw = (process.env.PICKUP_TIMES || "").trim();
@@ -37,12 +40,24 @@ const DRIVER_AGE = 30;
 // Фильтр поставщиков
 const WANTED_SUPPLIERS = ["Avis", "Budget", "Enterprise"];
 
-// Фильтр локаций
+// Фильтр локаций (ключевые названия, без хвостов в UI)
 const WANTED_PICKUP_LOCATIONS = [
   "Barcelona - Plaza Glories",
   "Barcelona - Centre Eixample",
   "Barcelona - Sants Train Station",
 ];
+
+/** Нормализует и мапит сырой текст локации из Booking к одному из целевых ключей. */
+function mapPickupLocation(raw) {
+  if (!raw) return null;
+  const normalized = raw.replace(/\s+/g, " ").trim();
+  for (const key of WANTED_PICKUP_LOCATIONS) {
+    if (normalized === key) return key;
+    if (normalized.startsWith(key)) return key;
+    if (normalized.includes(key)) return key;
+  }
+  return null;
+}
 
 // Базовый URL search-results (зафиксированный)
 const BASE_RESULTS_URL =
@@ -52,7 +67,9 @@ const BASE_RESULTS_URL =
 const WAIT_RESULTS_LOAD_MS = 15000;        // базовая подождать загрузку
 const WAIT_BETWEEN_REQUESTS_MS = 8000;     // пауза между запросами (уменьшаем риск капчи)
 
-// Макс. запросов за запуск: макс. окно 7 дней × 2 времени = 14 (0 = без ограничения)
+// Макс. запросов за запуск: до 14 job (0 = без ограничения).
+// В обычном режиме это примерно (до) 7 стартовых дат × (до) 4 длительностей × 1 время,
+// но фактическое число комбинаций дополнительно ограничивается этим лимитом.
 const MAX_REQUESTS_PER_RUN = 14;
 
 // Опционально: фильтровать поставщиков через левую панель (сильно уменьшает список)
@@ -163,7 +180,7 @@ function emitScoutEvent(name, data = {}) {
   console.log(`SCOUT_EVENT ${JSON.stringify({ name, ...data })}`);
 }
 
-/** Анализ: самое дешёвое окно, локация, комбо, глобальный минимум. */
+/** Результат: самое дешёвое окно, локация, комбо, глобальный минимум. */
 function analyzeMatches(matches) {
   if (!matches.length) return null;
   const byWindow = new Map(); // "pickup|dropoff|time" -> min price
@@ -475,20 +492,23 @@ async function runOneJob(page, pickupDate, dropoffDate, time, options = {}) {
       const model = (await card.locator("h2").first().innerText().catch(() => "")).trim();
       const supplierAlt = (await card.locator('img[alt^="Supplied by"]').first().getAttribute("alt").catch(() => "")) || "";
       const supplier = supplierAlt.replace(/^Supplied by\s*/i, "").trim();
-      const location = (await card.locator('button:has-text("Barcelona -")').first().innerText().catch(() => "")).trim();
+      // Локация: Booking может использовать разные символы дефиса и разные контейнеры,
+      // поэтому берём первую строку с "Barcelona" из полного текста карточки.
+      const locationMatch = cardText.match(/Barcelona[^\n]+/);
+      const location = locationMatch ? locationMatch[0].trim() : "";
       const euroValues = extractEuroPricesFromText(cardText);
       if (!euroValues.length) continue;
       const priceValue = Math.min(...euroValues);
       const priceText = `€ ${priceValue}`;
-      if (!supplier || !location) continue;
+      const mappedLocation = mapPickupLocation(location);
+      if (!supplier || !mappedLocation) continue;
       if (enforceSupplierFilter && WANTED_SUPPLIERS.length && !WANTED_SUPPLIERS.includes(supplier)) continue;
-      if (WANTED_PICKUP_LOCATIONS.length && !WANTED_PICKUP_LOCATIONS.includes(location)) continue;
       addToBucket({
         pickup: pickupStr,
         dropoff: dropoffStr,
         time,
         supplier,
-        location,
+        location: mappedLocation,
         model,
         priceText,
         priceValue,
@@ -681,17 +701,34 @@ async function launchScoutContext(userDataDir, runMode, useChrome = false) {
       }
     }
   } else {
-    for (let offset = 0; offset < WINDOW_DAYS; offset++) {
+    outer: for (let offset = 0; offset < WINDOW_DAYS; offset++) {
       const pickupDate = new Date(startDate);
       pickupDate.setDate(pickupDate.getDate() + offset);
-      const dropoffDate = new Date(pickupDate);
-      dropoffDate.setDate(dropoffDate.getDate() + durationDays);
-      for (const time of activeTimes) {
-        if (MAX_REQUESTS_PER_RUN > 0 && jobs.length >= MAX_REQUESTS_PER_RUN) break;
+
+      for (let extra = 0; extra < 4; extra++) {
+        const currentRentDays = durationDays + extra;
+        if (currentRentDays > 7) {
+          break;
+        }
+
+        const dropoffDate = new Date(pickupDate);
+        dropoffDate.setDate(dropoffDate.getDate() + currentRentDays);
+
+        // Не выходим за пределы окна: дата возврата не позже конца окна.
+        const windowEnd = new Date(startDate);
+        windowEnd.setDate(windowEnd.getDate() + (WINDOW_DAYS - 1));
+        if (dropoffDate > windowEnd) {
+          break;
+        }
+
+        if (MAX_REQUESTS_PER_RUN > 0 && jobs.length >= MAX_REQUESTS_PER_RUN) {
+          break outer;
+        }
+
         jobs.push({
           pickupDate: new Date(pickupDate.getTime()),
           dropoffDate: new Date(dropoffDate.getTime()),
-          time,
+          time: FIXED_HOUR,
         });
       }
     }
@@ -765,7 +802,7 @@ async function launchScoutContext(userDataDir, runMode, useChrome = false) {
     });
 
     if (analysis) {
-      console.log("\n--- Анализ ---");
+      console.log("\n--- Результат ---");
       console.log("Глобальный минимум:", analysis.globalMin.priceText, "|", analysis.globalMin.supplier, "|", analysis.globalMin.location, "|", analysis.globalMin.pickup, analysis.globalMin.time);
       if (analysis.cheapestWindow) {
         console.log("Самое дешёвое окно аренды:", analysis.cheapestWindow.key, "→ €" + analysis.cheapestWindow.price);

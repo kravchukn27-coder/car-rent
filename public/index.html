@@ -19,7 +19,7 @@
     <main class="main">
       <section class="card search-card">
         <div class="mode-tabs">
-          <button type="button" id="modeRegularBtn" class="mode-tab active">Календарь</button>
+          <button type="button" id="modeRegularBtn" class="mode-tab active">Поиск</button>
           <button type="button" id="modeFlexBtn" class="mode-tab">У меня гибкие планы</button>
         </div>
 
@@ -47,13 +47,6 @@
                 <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
               </div>
               <div class="calendar-grid" id="calendarGrid1"></div>
-            </div>
-            <div class="calendar-month">
-              <p class="calendar-month-title" id="monthTitle2"></p>
-              <div class="calendar-weekdays">
-                <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
-              </div>
-              <div class="calendar-grid" id="calendarGrid2"></div>
             </div>
           </div>
           <p class="calendar-selected" id="selectedRangeText">Не выбрано</p>
@@ -155,9 +148,7 @@
       const modeFlexBtn = document.getElementById("modeFlexBtn");
       const calendarHint = document.getElementById("calendarHint");
       const monthTitle1 = document.getElementById("monthTitle1");
-      const monthTitle2 = document.getElementById("monthTitle2");
       const calendarGrid1 = document.getElementById("calendarGrid1");
-      const calendarGrid2 = document.getElementById("calendarGrid2");
       const selectedRangeText = document.getElementById("selectedRangeText");
       const prevMonthBtn = document.getElementById("prevMonthBtn");
       const nextMonthBtn = document.getElementById("nextMonthBtn");
@@ -263,8 +254,27 @@
       }
 
       function getRentDays() {
-        const v = parseInt(rentDaysEl.value, 10);
+        const raw = String(rentDaysEl.value || "").trim();
+        const v = parseInt(raw, 10);
         return Number.isFinite(v) ? Math.min(MAX_RENT_DAYS, Math.max(MIN_RENT_DAYS, v)) : MIN_RENT_DAYS;
+      }
+      function validateRentDaysInput() {
+        const raw = String(rentDaysEl.value || "").trim();
+        if (!raw) {
+          rentDaysEl.setCustomValidity("Введите число от 1 до 7.");
+          return false;
+        }
+        if (!/^\d+$/.test(raw)) {
+          rentDaysEl.setCustomValidity("Допустимы только цифры от 1 до 7.");
+          return false;
+        }
+        const num = parseInt(raw, 10);
+        if (!Number.isFinite(num) || num < MIN_RENT_DAYS || num > MAX_RENT_DAYS) {
+          rentDaysEl.setCustomValidity("Введите значение от 1 до 7.");
+          return false;
+        }
+        rentDaysEl.setCustomValidity("");
+        return true;
       }
 
       function getPresetDatesWeekendsMonth() {
@@ -399,13 +409,21 @@
           const offset = (firstDay.getDay() + 6) % 7;
           const daysInMonth = new Date(y, m + 1, 0).getDate();
           const presetSet = (searchMode === "flex" && flexPresetDates && flexPresetDates.length > 0) ? new Set(flexPresetDates) : null;
+          const hasPendingRegularRange = searchMode === "regular" && rangeStart && !rangeEnd;
+          let minEndIso = null;
+          let maxEndIso = null;
+          if (hasPendingRegularRange) {
+            const rentDays = getRentDays();
+            minEndIso = addDays(rangeStart, rentDays - 1);
+            maxEndIso = addDays(rangeStart, MAX_WINDOW_DAYS - 1);
+          }
           const cells = [];
           for (let i = 0; i < offset; i++) cells.push({ empty: true });
           for (let day = 1; day <= daysInMonth; day++) {
             const iso = toLocalDateString(new Date(y, m, day));
             const isPast = iso < todayIso;
             const isToday = iso === todayIso;
-            let inRange = false, isStart = false, isEnd = false;
+            let inRange = false, isStart = false, isEnd = false, allowedEnd = false, blockedEnd = false;
             if (rangeStart && rangeEnd) {
               if (iso === rangeStart) isStart = true;
               else if (iso === rangeEnd) isEnd = true;
@@ -413,8 +431,15 @@
             } else if (rangeStart && iso === rangeStart) {
               isStart = true;
             }
+            if (hasPendingRegularRange && !isPast && iso > rangeStart) {
+              if (iso >= minEndIso && iso <= maxEndIso) {
+                allowedEnd = true;
+              } else {
+                blockedEnd = true;
+              }
+            }
             const isPresetSelected = presetSet && presetSet.has(iso);
-            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange, isPresetSelected });
+            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange, isPresetSelected, allowedEnd, blockedEnd });
           }
           while (cells.length % 7 !== 0) cells.push({ empty: true });
           return cells;
@@ -430,7 +455,10 @@
             if (c.isEnd) classes.push("end");
             if (c.inRange) classes.push("range");
             if (c.isPresetSelected) classes.push("preset");
-            return '<button type="button" class="' + classes.join(" ") + '" data-date="' + escapeHtml(c.iso) + '"' + (c.isPast ? " disabled" : "") + '>' + c.day + '</button>';
+            if (c.allowedEnd && !c.isStart && !c.isEnd && !c.inRange) classes.push("allowed-end");
+            if (c.blockedEnd) classes.push("blocked-end");
+            const isDisabled = c.isPast || c.blockedEnd;
+            return '<button type="button" class="' + classes.join(" ") + '" data-date="' + escapeHtml(c.iso) + '"' + (isDisabled ? " disabled" : "") + '>' + c.day + '</button>';
           }).join("");
         }
 
@@ -444,11 +472,17 @@
                 activePresetId = null;
                 updatePresetButtonsActive();
               }
-              if (!rangeStart || (rangeStart && rangeEnd)) {
+              if (rangeStart && rangeEnd && iso === rangeStart) {
+                rangeStart = null;
+                rangeEnd = null;
+              } else if (!rangeStart || (rangeStart && rangeEnd)) {
                 rangeStart = iso;
                 rangeEnd = null;
               } else {
-                if (iso < rangeStart) {
+                if (iso === rangeStart) {
+                  rangeStart = null;
+                  rangeEnd = null;
+                } else if (iso < rangeStart) {
                   rangeStart = iso;
                   rangeEnd = null;
                 } else {
@@ -479,18 +513,9 @@
         const monthLabel1 = viewMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
         monthTitle1.textContent = monthLabel1;
 
-        const nextMonth = new Date(y1, m1 + 1, 1);
-        const y2 = nextMonth.getFullYear();
-        const m2 = nextMonth.getMonth();
-        const monthLabel2 = nextMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-        monthTitle2.textContent = monthLabel2;
-
         const cells1 = buildMonthCells(y1, m1);
-        const cells2 = buildMonthCells(y2, m2);
         calendarGrid1.innerHTML = cellsToHtml(cells1);
-        calendarGrid2.innerHTML = cellsToHtml(cells2);
         attachClicks(calendarGrid1);
-        attachClicks(calendarGrid2);
       }
 
       prevMonthBtn.addEventListener("click", function() {
@@ -504,13 +529,18 @@
       modeRegularBtn.addEventListener("click", function() { setMode("regular"); });
       modeFlexBtn.addEventListener("click", function() { setMode("flex"); });
       rentDaysEl.addEventListener("input", function() {
-        const v = getRentDays();
-        if (rentDaysEl.value !== String(v)) rentDaysEl.value = v;
+        // Не перезаписываем значение во время печати, иначе "6" легко превращается в "26" -> clamp до 7.
+        // Клэмп и нормализацию делаем на blur/при запуске поиска.
+        validateRentDaysInput();
         updateSelectedText();
         renderCalendar();
       });
+      rentDaysEl.addEventListener("focus", function() {
+        rentDaysEl.select();
+      });
       rentDaysEl.addEventListener("blur", function() {
-        rentDaysEl.value = getRentDays();
+        rentDaysEl.value = String(getRentDays());
+        validateRentDaysInput();
       });
 
       fillFlexTimeOptions();
@@ -617,22 +647,30 @@
           if (!byKey.has(key)) byKey.set(key, { key, pickup: m.pickup, dropoff: m.dropoff, matches: [] });
           byKey.get(key).matches.push(m);
         });
-        const list = Array.from(byKey.values());
-        list.sort(function(a, b) { return a.pickup.localeCompare(b.pickup); });
-        return list.map(function(w) {
+        const list = Array.from(byKey.values()).map(function(w) {
+          const days = daysBetween(w.pickup, w.dropoff);
           const minPrice = w.matches.reduce(function(min, m) {
             const v = Number(m.priceValue);
             return Number.isFinite(v) ? Math.min(min, v) : min;
           }, Infinity);
           return {
             key: w.key,
-            label: formatDateNoYear(w.pickup) + " – " + formatDateNoYear(w.dropoff),
+            pickup: w.pickup,
+            dropoff: w.dropoff,
+            days: days,
+            label: formatDateNoYear(w.pickup) + " – " + formatDateNoYear(w.dropoff) + " (" + days + " дн.)",
             count: w.matches.length,
             minPrice: minPrice,
             matches: w.matches,
             searchUrl: (w.matches[0] && w.matches[0].searchUrl) ? w.matches[0].searchUrl : null
           };
         });
+        // Сначала более короткие аренды, затем по дате начала.
+        list.sort(function(a, b) {
+          if (a.days !== b.days) return a.days - b.days;
+          return a.pickup.localeCompare(b.pickup);
+        });
+        return list;
       }
       function sortMatches(matches, sortBy) {
         const arr = matches.slice();
@@ -655,10 +693,25 @@
         timeFilterEl.value = (current && values.indexOf(current) >= 0) ? current : "";
       }
       function renderWindowTabs(windows, selectedKey) {
-        windowTabsEl.innerHTML = windows.map(function(w) {
-          return '<button type="button" class="window-tab' + (w.key === selectedKey ? " active" : "") + '" data-window="' + escapeHtml(w.key) + '">' +
-            escapeHtml(w.label) + (Number.isFinite(w.minPrice) ? " €" + w.minPrice : "") + ' <span class="count">(' + w.count + ')</span></button>';
-        }).join("");
+        const groups = new Map();
+        windows.forEach(function(w) {
+          const key = String(w.days);
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(w);
+        });
+        const sortedDayKeys = Array.from(groups.keys()).sort(function(a, b) { return Number(a) - Number(b); });
+        let html = "";
+        sortedDayKeys.forEach(function(dayKey) {
+          const dayWindows = groups.get(dayKey) || [];
+          html += '<div class="window-group">';
+          html += '<div class="window-group-label">' + escapeHtml(dayKey + " дн.") + '</div>';
+          dayWindows.forEach(function(w) {
+            html += '<button type="button" class="window-tab' + (w.key === selectedKey ? " active" : "") + '" data-window="' + escapeHtml(w.key) + '">' +
+              escapeHtml(w.label) + (Number.isFinite(w.minPrice) ? " €" + w.minPrice : "") + ' <span class="count">(' + w.count + ')</span></button>';
+          });
+          html += '</div>';
+        });
+        windowTabsEl.innerHTML = html;
         windowTabsEl.querySelectorAll(".window-tab").forEach(function(btn) {
           btn.addEventListener("click", function() {
             window.selectedWindowKey = btn.dataset.window;
@@ -682,8 +735,21 @@
         if (windowSearchUrl) html += '<p class="search-link-row"><a href="' + escapeHtml(windowSearchUrl) + '" target="_blank" rel="noopener" class="card-link">Открыть поиск на Booking для этого окна</a></p>';
         sorted.forEach(function(m) {
           const cardKey = [m.pickup, m.dropoff, m.time, m.supplier, m.location, m.model, m.priceValue].join("|");
+          var days = null;
+          if (m.pickup && m.dropoff) {
+            var diff = daysBetween(m.pickup, m.dropoff);
+            if (Number.isFinite(diff)) days = diff;
+          }
+          var perDay = null;
+          if (days != null && days >= 1 && Number.isFinite(m.priceValue)) {
+            perDay = Math.round(m.priceValue / days);
+          }
+          var priceHtml = escapeHtml(m.priceText);
+          if (perDay != null) {
+            priceHtml += ' (' + escapeHtml('€ ' + perDay + '/сутки') + ')';
+          }
           html += '<div class="result-card' + (targetMatchKey === cardKey ? " target" : "") + '" data-match-key="' + escapeHtml(cardKey) + '">' +
-            '<div class="result-price">' + escapeHtml(m.priceText) + '</div>' +
+            '<div class="result-price">' + priceHtml + '</div>' +
             '<div class="result-body">' +
               '<div class="result-title">' + escapeHtml(m.model) + '</div>' +
               '<div class="result-meta">' + escapeHtml(m.supplier) + ' · ' + escapeHtml(m.location) + ' · ' + m.pickup + " – " + m.dropoff + ", " + (m.time || m.pickupTime || "") + '</div>' +
@@ -714,31 +780,89 @@
         const analysis = data.analysis;
         if (analysis && analysis.globalMin) {
           analysisBlock.hidden = false;
+
           const gm = analysis.globalMin;
-          const timeStr = gm.time != null ? String(gm.time).padStart(2, "0") + ":00" : "";
-          const rentDaysForAnalysis = searchMode === "flex" ? getRentDays() : getRentDays();
-          const dateRange = formatDisplayDate(gm.pickup) + " – " + formatDisplayDate(gm.dropoff);
-          analysisBlock.innerHTML =
-            '<div class="analysis-header">' +
-              '<h3 class="analysis-title">Анализ</h3>' +
-              '<span class="analysis-rent-days">Срок аренды: ' + rentDaysForAnalysis + ' дн.</span>' +
+          const gmTimeStr = gm.time != null ? String(gm.time).padStart(2, "0") + ":00" : "";
+          const gmDays = daysBetween(gm.pickup, gm.dropoff);
+          const gmDateRange = formatDisplayDate(gm.pickup) + " – " + formatDisplayDate(gm.dropoff);
+
+          // Находим самое выгодное по цене за сутки.
+          let bestPerDay = null;
+          let bestPerDayValue = Infinity;
+          (matches || []).forEach(function(m) {
+            if (!m.pickup || !m.dropoff) return;
+            const diff = daysBetween(m.pickup, m.dropoff);
+            if (!Number.isFinite(diff) || diff < 1) return;
+            const price = Number(m.priceValue);
+            if (!Number.isFinite(price)) return;
+            const perDay = price / diff;
+            if (perDay < bestPerDayValue) {
+              bestPerDayValue = perDay;
+              bestPerDay = m;
+            }
+          });
+
+          let html = '';
+          html += '<div class="analysis-header">' +
+            '<h3 class="analysis-title">Результаты</h3>' +
+            '<span class="analysis-rent-days">Срок аренды: ' + gmDays + ' дн.</span>' +
+            '</div>';
+
+          // Карточка 1 — минимальная общая цена.
+          html += '<button type="button" class="analysis-card" id="jumpToCheapestBtn">' +
+            '<div class="analysis-card-label">Минимальная общая цена</div>' +
+            '<div class="analysis-card-price">' + escapeHtml(gm.priceText) + '</div>' +
+            '<div class="analysis-card-details">' +
+              '<span class="analysis-detail"><span class="analysis-detail-label">Даты</span> ' + escapeHtml(gmDateRange) + '</span>' +
+              (gmTimeStr ? '<span class="analysis-detail"><span class="analysis-detail-label">Время</span> ' + escapeHtml(gmTimeStr) + '</span>' : '') +
+              '<span class="analysis-detail"><span class="analysis-detail-label">Локация</span> ' + escapeHtml(gm.location) + '</span>' +
+              '<span class="analysis-detail"><span class="analysis-detail-label">Прокатчик</span> ' + escapeHtml(gm.supplier) + '</span>' +
             '</div>' +
-            '<button type="button" class="analysis-card" id="jumpToCheapestBtn">' +
-              '<div class="analysis-card-label">Самое дешёвое предложение</div>' +
-              '<div class="analysis-card-price">' + escapeHtml(gm.priceText) + '</div>' +
+            '<span class="analysis-card-hint">Показать самое дешёвое предложение</span>' +
+          '</button>';
+
+          // Карточка 2 — минимальная цена за сутки (если удалось посчитать).
+          if (bestPerDay && Number.isFinite(bestPerDayValue)) {
+            const b = bestPerDay;
+            const bTimeStr = b.time != null ? String(b.time).padStart(2, "0") + ":00" : "";
+            const bDays = daysBetween(b.pickup, b.dropoff);
+            const bDateRange = formatDisplayDate(b.pickup) + " – " + formatDisplayDate(b.dropoff);
+            const perDayRounded = Math.round(bestPerDayValue);
+            html += '<button type="button" class="analysis-card" id="jumpToBestPerDayBtn">' +
+              '<div class="analysis-card-label">Минимальная цена за сутки</div>' +
+              '<div class="analysis-card-price">€ ' + escapeHtml(String(perDayRounded)) + '/сутки</div>' +
               '<div class="analysis-card-details">' +
-                '<span class="analysis-detail"><span class="analysis-detail-label">Даты</span> ' + escapeHtml(dateRange) + '</span>' +
-                (timeStr ? '<span class="analysis-detail"><span class="analysis-detail-label">Время</span> ' + escapeHtml(timeStr) + '</span>' : '') +
-                '<span class="analysis-detail"><span class="analysis-detail-label">Локация</span> ' + escapeHtml(gm.location) + '</span>' +
-                '<span class="analysis-detail"><span class="analysis-detail-label">Прокатчик</span> ' + escapeHtml(gm.supplier) + '</span>' +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Общая цена</span> ' + escapeHtml(b.priceText) + '</span>' +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Даты</span> ' + escapeHtml(bDateRange) + ' (' + bDays + ' дн.)</span>' +
+                (bTimeStr ? '<span class="analysis-detail"><span class="analysis-detail-label">Время</span> ' + escapeHtml(bTimeStr) + '</span>' : '') +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Локация</span> ' + escapeHtml(b.location) + '</span>' +
+                '<span class="analysis-detail"><span class="analysis-detail-label">Прокатчик</span> ' + escapeHtml(b.supplier) + '</span>' +
               '</div>' +
-              '<span class="analysis-card-hint">Нажмите, чтобы перейти к варианту в списке</span>' +
+              '<span class="analysis-card-hint">Показать лучшее по цене за сутки</span>' +
             '</button>';
+          }
+
+          analysisBlock.innerHTML = html;
+
           var jumpBtn = document.getElementById("jumpToCheapestBtn");
           if (jumpBtn) jumpBtn.addEventListener("click", function() {
             var targetWindowKey = gm.pickup + "|" + gm.dropoff;
             var targetTime = gm.time != null ? String(gm.time) : "";
             targetMatchKey = [gm.pickup, gm.dropoff, gm.time, gm.supplier, gm.location, gm.model, gm.priceValue].join("|");
+            if (window.windows && window.windows.some(function(w) { return w.key === targetWindowKey; })) window.selectedWindowKey = targetWindowKey;
+            if (targetTime) timeFilterEl.value = targetTime;
+            renderWindowTabs(window.windows, window.selectedWindowKey);
+            applyFiltersAndRender();
+            if (resetTimeFilterTimer) clearTimeout(resetTimeFilterTimer);
+            resetTimeFilterTimer = setTimeout(function() { timeFilterEl.value = ""; applyFiltersAndRender(); }, 3000);
+          });
+
+          var jumpBestBtn = document.getElementById("jumpToBestPerDayBtn");
+          if (jumpBestBtn && bestPerDay) jumpBestBtn.addEventListener("click", function() {
+            var b = bestPerDay;
+            var targetWindowKey = b.pickup + "|" + b.dropoff;
+            var targetTime = b.time != null ? String(b.time) : "";
+            targetMatchKey = [b.pickup, b.dropoff, b.time, b.supplier, b.location, b.model, b.priceValue].join("|");
             if (window.windows && window.windows.some(function(w) { return w.key === targetWindowKey; })) window.selectedWindowKey = targetWindowKey;
             if (targetTime) timeFilterEl.value = targetTime;
             renderWindowTabs(window.windows, window.selectedWindowKey);
@@ -769,6 +893,12 @@
       });
 
       runBtn.addEventListener("click", function() {
+        if (!validateRentDaysInput()) {
+          setStatus(rentDaysEl.validationMessage || ("Введите значение от " + MIN_RENT_DAYS + " до " + MAX_RENT_DAYS + "."), "error");
+          rentDaysEl.focus();
+          rentDaysEl.select();
+          return;
+        }
         const rentDays = getRentDays();
         if (rentDays < MIN_RENT_DAYS || rentDays > MAX_RENT_DAYS) {
           setStatus("Длительность аренды: от " + MIN_RENT_DAYS + " до " + MAX_RENT_DAYS + " дней.", "error");
