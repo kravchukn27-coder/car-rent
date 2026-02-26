@@ -19,7 +19,7 @@
     <main class="main">
       <section class="card search-card">
         <div class="mode-tabs">
-          <button type="button" id="modeRegularBtn" class="mode-tab active">Календарь</button>
+          <button type="button" id="modeRegularBtn" class="mode-tab active">Поиск</button>
           <button type="button" id="modeFlexBtn" class="mode-tab">У меня гибкие планы</button>
         </div>
 
@@ -47,13 +47,6 @@
                 <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
               </div>
               <div class="calendar-grid" id="calendarGrid1"></div>
-            </div>
-            <div class="calendar-month">
-              <p class="calendar-month-title" id="monthTitle2"></p>
-              <div class="calendar-weekdays">
-                <span>ПН</span><span>ВТ</span><span>СР</span><span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
-              </div>
-              <div class="calendar-grid" id="calendarGrid2"></div>
             </div>
           </div>
           <p class="calendar-selected" id="selectedRangeText">Не выбрано</p>
@@ -155,9 +148,7 @@
       const modeFlexBtn = document.getElementById("modeFlexBtn");
       const calendarHint = document.getElementById("calendarHint");
       const monthTitle1 = document.getElementById("monthTitle1");
-      const monthTitle2 = document.getElementById("monthTitle2");
       const calendarGrid1 = document.getElementById("calendarGrid1");
-      const calendarGrid2 = document.getElementById("calendarGrid2");
       const selectedRangeText = document.getElementById("selectedRangeText");
       const prevMonthBtn = document.getElementById("prevMonthBtn");
       const nextMonthBtn = document.getElementById("nextMonthBtn");
@@ -399,13 +390,21 @@
           const offset = (firstDay.getDay() + 6) % 7;
           const daysInMonth = new Date(y, m + 1, 0).getDate();
           const presetSet = (searchMode === "flex" && flexPresetDates && flexPresetDates.length > 0) ? new Set(flexPresetDates) : null;
+          const hasPendingRegularRange = searchMode === "regular" && rangeStart && !rangeEnd;
+          let minEndIso = null;
+          let maxEndIso = null;
+          if (hasPendingRegularRange) {
+            const rentDays = getRentDays();
+            minEndIso = addDays(rangeStart, rentDays - 1);
+            maxEndIso = addDays(rangeStart, MAX_WINDOW_DAYS - 1);
+          }
           const cells = [];
           for (let i = 0; i < offset; i++) cells.push({ empty: true });
           for (let day = 1; day <= daysInMonth; day++) {
             const iso = toLocalDateString(new Date(y, m, day));
             const isPast = iso < todayIso;
             const isToday = iso === todayIso;
-            let inRange = false, isStart = false, isEnd = false;
+            let inRange = false, isStart = false, isEnd = false, allowedEnd = false, blockedEnd = false;
             if (rangeStart && rangeEnd) {
               if (iso === rangeStart) isStart = true;
               else if (iso === rangeEnd) isEnd = true;
@@ -413,8 +412,15 @@
             } else if (rangeStart && iso === rangeStart) {
               isStart = true;
             }
+            if (hasPendingRegularRange && !isPast && iso > rangeStart) {
+              if (iso >= minEndIso && iso <= maxEndIso) {
+                allowedEnd = true;
+              } else {
+                blockedEnd = true;
+              }
+            }
             const isPresetSelected = presetSet && presetSet.has(iso);
-            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange, isPresetSelected });
+            cells.push({ iso, day, isPast, isToday, isStart, isEnd, inRange, isPresetSelected, allowedEnd, blockedEnd });
           }
           while (cells.length % 7 !== 0) cells.push({ empty: true });
           return cells;
@@ -430,7 +436,10 @@
             if (c.isEnd) classes.push("end");
             if (c.inRange) classes.push("range");
             if (c.isPresetSelected) classes.push("preset");
-            return '<button type="button" class="' + classes.join(" ") + '" data-date="' + escapeHtml(c.iso) + '"' + (c.isPast ? " disabled" : "") + '>' + c.day + '</button>';
+            if (c.allowedEnd && !c.isStart && !c.isEnd && !c.inRange) classes.push("allowed-end");
+            if (c.blockedEnd) classes.push("blocked-end");
+            const isDisabled = c.isPast || c.blockedEnd;
+            return '<button type="button" class="' + classes.join(" ") + '" data-date="' + escapeHtml(c.iso) + '"' + (isDisabled ? " disabled" : "") + '>' + c.day + '</button>';
           }).join("");
         }
 
@@ -444,11 +453,17 @@
                 activePresetId = null;
                 updatePresetButtonsActive();
               }
-              if (!rangeStart || (rangeStart && rangeEnd)) {
+              if (rangeStart && rangeEnd && iso === rangeStart) {
+                rangeStart = null;
+                rangeEnd = null;
+              } else if (!rangeStart || (rangeStart && rangeEnd)) {
                 rangeStart = iso;
                 rangeEnd = null;
               } else {
-                if (iso < rangeStart) {
+                if (iso === rangeStart) {
+                  rangeStart = null;
+                  rangeEnd = null;
+                } else if (iso < rangeStart) {
                   rangeStart = iso;
                   rangeEnd = null;
                 } else {
@@ -479,18 +494,9 @@
         const monthLabel1 = viewMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
         monthTitle1.textContent = monthLabel1;
 
-        const nextMonth = new Date(y1, m1 + 1, 1);
-        const y2 = nextMonth.getFullYear();
-        const m2 = nextMonth.getMonth();
-        const monthLabel2 = nextMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-        monthTitle2.textContent = monthLabel2;
-
         const cells1 = buildMonthCells(y1, m1);
-        const cells2 = buildMonthCells(y2, m2);
         calendarGrid1.innerHTML = cellsToHtml(cells1);
-        calendarGrid2.innerHTML = cellsToHtml(cells2);
         attachClicks(calendarGrid1);
-        attachClicks(calendarGrid2);
       }
 
       prevMonthBtn.addEventListener("click", function() {
@@ -720,8 +726,8 @@
           const dateRange = formatDisplayDate(gm.pickup) + " – " + formatDisplayDate(gm.dropoff);
           analysisBlock.innerHTML =
             '<div class="analysis-header">' +
-              '<h3 class="analysis-title">Анализ</h3>' +
-              '<span class="analysis-rent-days">Срок аренды: ' + rentDaysForAnalysis + ' дн.</span>' +
+            '<h3 class="analysis-title">Результат</h3>' +
+            '<span class="analysis-rent-days">Срок аренды: ' + rentDaysForAnalysis + ' дн.</span>' +
             '</div>' +
             '<button type="button" class="analysis-card" id="jumpToCheapestBtn">' +
               '<div class="analysis-card-label">Самое дешёвое предложение</div>' +

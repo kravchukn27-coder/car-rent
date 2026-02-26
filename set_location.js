@@ -37,12 +37,24 @@ const DRIVER_AGE = 30;
 // Фильтр поставщиков
 const WANTED_SUPPLIERS = ["Avis", "Budget", "Enterprise"];
 
-// Фильтр локаций
+// Фильтр локаций (ключевые названия, без хвостов в UI)
 const WANTED_PICKUP_LOCATIONS = [
   "Barcelona - Plaza Glories",
   "Barcelona - Centre Eixample",
   "Barcelona - Sants Train Station",
 ];
+
+/** Нормализует и мапит сырой текст локации из Booking к одному из целевых ключей. */
+function mapPickupLocation(raw) {
+  if (!raw) return null;
+  const normalized = raw.replace(/\s+/g, " ").trim();
+  for (const key of WANTED_PICKUP_LOCATIONS) {
+    if (normalized === key) return key;
+    if (normalized.startsWith(key)) return key;
+    if (normalized.includes(key)) return key;
+  }
+  return null;
+}
 
 // Базовый URL search-results (зафиксированный)
 const BASE_RESULTS_URL =
@@ -163,7 +175,7 @@ function emitScoutEvent(name, data = {}) {
   console.log(`SCOUT_EVENT ${JSON.stringify({ name, ...data })}`);
 }
 
-/** Анализ: самое дешёвое окно, локация, комбо, глобальный минимум. */
+/** Результат: самое дешёвое окно, локация, комбо, глобальный минимум. */
 function analyzeMatches(matches) {
   if (!matches.length) return null;
   const byWindow = new Map(); // "pickup|dropoff|time" -> min price
@@ -475,20 +487,23 @@ async function runOneJob(page, pickupDate, dropoffDate, time, options = {}) {
       const model = (await card.locator("h2").first().innerText().catch(() => "")).trim();
       const supplierAlt = (await card.locator('img[alt^="Supplied by"]').first().getAttribute("alt").catch(() => "")) || "";
       const supplier = supplierAlt.replace(/^Supplied by\s*/i, "").trim();
-      const location = (await card.locator('button:has-text("Barcelona -")').first().innerText().catch(() => "")).trim();
+      // Локация: Booking может использовать разные символы дефиса и разные контейнеры,
+      // поэтому берём первую строку с "Barcelona" из полного текста карточки.
+      const locationMatch = cardText.match(/Barcelona[^\n]+/);
+      const location = locationMatch ? locationMatch[0].trim() : "";
       const euroValues = extractEuroPricesFromText(cardText);
       if (!euroValues.length) continue;
       const priceValue = Math.min(...euroValues);
       const priceText = `€ ${priceValue}`;
-      if (!supplier || !location) continue;
+      const mappedLocation = mapPickupLocation(location);
+      if (!supplier || !mappedLocation) continue;
       if (enforceSupplierFilter && WANTED_SUPPLIERS.length && !WANTED_SUPPLIERS.includes(supplier)) continue;
-      if (WANTED_PICKUP_LOCATIONS.length && !WANTED_PICKUP_LOCATIONS.includes(location)) continue;
       addToBucket({
         pickup: pickupStr,
         dropoff: dropoffStr,
         time,
         supplier,
-        location,
+        location: mappedLocation,
         model,
         priceText,
         priceValue,
@@ -765,7 +780,7 @@ async function launchScoutContext(userDataDir, runMode, useChrome = false) {
     });
 
     if (analysis) {
-      console.log("\n--- Анализ ---");
+      console.log("\n--- Результат ---");
       console.log("Глобальный минимум:", analysis.globalMin.priceText, "|", analysis.globalMin.supplier, "|", analysis.globalMin.location, "|", analysis.globalMin.pickup, analysis.globalMin.time);
       if (analysis.cheapestWindow) {
         console.log("Самое дешёвое окно аренды:", analysis.cheapestWindow.key, "→ €" + analysis.cheapestWindow.price);
