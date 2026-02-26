@@ -110,13 +110,12 @@ app.post("/api/run", async (req, res) => {
   if (!isFlex && endDate) {
     const a = new Date(start + "T00:00:00");
     const b = new Date(endDate + "T00:00:00");
-    horizon = Math.round((b - a) / (24 * 60 * 60 * 1000)) - parseInt(days, 10) + 1;
-    if (horizon < 1) horizon = 1;
-    if (horizon > 7) horizon = 7;
+    const windowLength = Math.round((b - a) / (24 * 60 * 60 * 1000)) + 1;
+    horizon = Math.max(1, Math.min(windowLength, 7));
   }
   const estimatedTotalJobs = isFlex
     ? Math.min(MAX_REQUESTS_PER_RUN, Math.max(1, normalizedPickupDates.length * TIMES_PER_DAY))
-    : Math.min(MAX_REQUESTS_PER_RUN, Math.max(1, horizon * TIMES_PER_DAY));
+    : Math.min(MAX_REQUESTS_PER_RUN, Math.max(1, horizon * 4));
   scoutProgress = {
     running: true,
     totalJobs: estimatedTotalJobs,
